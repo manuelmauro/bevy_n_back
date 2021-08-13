@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bevy::{core::FixedTimestep, prelude::*, render::pass::ClearColor};
 use rand::{
     distributions::{Distribution, Standard},
@@ -119,10 +121,16 @@ impl Tint {
         }
     }
     fn next(&self) -> Self {
-        match &self {
-            Tint::Red => Tint::Green,
-            Tint::Green => Tint::Blue,
-            Tint::Blue => Tint::Red,
+        rand::random()
+    }
+}
+
+impl Distribution<Tint> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tint {
+        match rng.gen_range(0..=9) {
+            0 => Tint::Red,
+            1 => Tint::Green,
+            _ => Tint::Blue,
         }
     }
 }
@@ -133,16 +141,26 @@ struct Paint {
 
 struct Scoreboard {
     score: usize,
-    position_history: Vec<Vertex>,
-    color_history: Vec<Tint>,
+    position_history: VecDeque<Vertex>,
+    color_history: VecDeque<Tint>,
 }
 
 impl Default for Scoreboard {
     fn default() -> Self {
+        let mut position_history = VecDeque::new();
+        position_history.push_front(Vertex::Center);
+        position_history.push_front(Vertex::Center);
+        position_history.push_front(Vertex::Center);
+
+        let mut color_history = VecDeque::new();
+        color_history.push_front(Tint::Blue);
+        color_history.push_front(Tint::Blue);
+        color_history.push_front(Tint::Blue);
+
         Scoreboard {
             score: 0,
-            position_history: Vec::new(),
-            color_history: Vec::new(),
+            position_history,
+            color_history,
         }
     }
 }
@@ -253,8 +271,12 @@ fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
 
 fn history_system(mut scoreboard: ResMut<Scoreboard>, mut board_query: Query<(&Position, &Paint)>) {
     if let Ok((position, paint)) = board_query.single_mut() {
-        scoreboard.position_history.push(position.vertex.clone());
-        scoreboard.color_history.push(paint.color.clone());
+        scoreboard.position_history.pop_front();
+        scoreboard
+            .position_history
+            .push_back(position.vertex.clone());
+        scoreboard.color_history.pop_front();
+        scoreboard.color_history.push_back(paint.color.clone());
     }
 }
 
@@ -285,13 +307,13 @@ fn answer_system(
 ) {
     if let Ok((position, paint)) = query.single_mut() {
         if keyboard_input.pressed(KeyCode::Left) {
-            if position.vertex == *scoreboard.position_history.last().unwrap() {
+            if position.vertex == *scoreboard.position_history.front().unwrap() {
                 scoreboard.score += 1;
             }
         }
 
         if keyboard_input.pressed(KeyCode::Right) {
-            if paint.color == *scoreboard.color_history.last().unwrap() {
+            if paint.color == *scoreboard.color_history.front().unwrap() {
                 scoreboard.score += 1;
             }
         }
