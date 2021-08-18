@@ -60,9 +60,11 @@ impl Vertex {
             Vertex::None => 0.0,
         }
     }
+}
 
-    fn next(&self) -> Self {
-        rand::random()
+impl Default for Vertex {
+    fn default() -> Self {
+        Vertex::None
     }
 }
 
@@ -80,46 +82,6 @@ impl Distribution<Vertex> for Standard {
             _ => Vertex::BottomRight,
         }
     }
-}
-
-struct Position {
-    vertex: Vertex,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-enum Tint {
-    Red,
-    Green,
-    Blue,
-    None,
-}
-
-impl Tint {
-    fn material(&self) -> ColorMaterial {
-        match self {
-            Tint::Red => Color::rgb(1.0, 0.0, 0.0).into(),
-            Tint::Green => Color::rgb(0.0, 1.0, 0.0).into(),
-            Tint::Blue => Color::rgb(0.0, 0.0, 1.0).into(),
-            Tint::None => Color::rgb(0.0, 0.0, 0.0).into(),
-        }
-    }
-    fn next(&self) -> Self {
-        rand::random()
-    }
-}
-
-impl Distribution<Tint> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tint {
-        match rng.gen_range(0..=2) {
-            0 => Tint::Red,
-            1 => Tint::Green,
-            _ => Tint::Blue,
-        }
-    }
-}
-
-struct Paint {
-    color: Tint,
 }
 
 struct Score {
@@ -157,38 +119,69 @@ impl Default for Score {
 
 struct GlobalState {
     score_position: Score,
-    score_color: Score,
     position_answer: bool,
-    color_answer: bool,
-    position_history: VecDeque<Vertex>,
-    color_history: VecDeque<Tint>,
+    cues: CueChain<Vertex>,
 }
 
 impl Default for GlobalState {
     fn default() -> Self {
-        let mut position_history = VecDeque::new();
-        position_history.push_front(Vertex::None);
-        position_history.push_front(Vertex::None);
-
-        let mut color_history = VecDeque::new();
-        color_history.push_front(Tint::None);
-        color_history.push_front(Tint::None);
-
         GlobalState {
             score_position: Default::default(),
-            score_color: Default::default(),
             position_answer: false,
-            color_answer: false,
-            position_history,
-            color_history,
+            cues: CueChain::new(3),
         }
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
-enum MyStage {
-    BeforeRound,
-    AfterRound,
+struct CueChain<T> {
+    history: VecDeque<T>,
+}
+
+impl<T: Default> CueChain<T> {
+    fn new(span: usize) -> Self {
+        let mut cc = CueChain {
+            history: VecDeque::new(),
+        };
+
+        for _ in 0..span {
+            cc.history.push_front(Default::default())
+        }
+
+        cc
+    }
+}
+
+impl<T> CueChain<T>
+where
+    Standard: Distribution<T>,
+    T: Clone + PartialEq + Default,
+{
+    fn next(&mut self) -> T {
+        let mut rng = rand::thread_rng();
+        let y = rng.gen::<f64>();
+
+        let cue = if y < 0.25 && *self.history.front().unwrap() != Default::default() {
+            self.history.front().unwrap().clone()
+        } else {
+            rand::random()
+        };
+
+        self.history.push_back(cue);
+        self.history.pop_front();
+
+        (*self.history.back().unwrap()).clone()
+    }
+}
+
+impl<T: PartialEq> CueChain<T> {
+    fn is_match(&self) -> bool {
+        self.history.back() == self.history.front()
+    }
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
+enum MyLabels {
+    ScoreCheck,
 }
 
 fn main() {
@@ -197,26 +190,11 @@ fn main() {
         .insert_resource(GlobalState::default())
         .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
         .add_startup_system(setup.system())
-        .add_stage_before(
-            CoreStage::Update,
-            MyStage::BeforeRound,
-            SystemStage::parallel(),
-        )
-        .add_stage_after(
-            CoreStage::Update,
-            MyStage::AfterRound,
-            SystemStage::parallel(),
-        )
-        .add_system_to_stage(MyStage::BeforeRound, timer_system.system())
-        .add_system_to_stage(MyStage::BeforeRound, score_system.system())
-        .add_system_to_stage(CoreStage::Update, position_system.system())
-        .add_system_to_stage(CoreStage::Update, color_system.system())
-        .add_system_to_stage(CoreStage::Update, answer_system.system())
-        .add_system_to_stage(MyStage::AfterRound, scoreboard_system.system())
-        .add_system_to_stage(
-            MyStage::AfterRound,
-            bevy::input::system::exit_on_esc_system.system(),
-        )
+        .add_system(timer_system.system())
+        .add_system(score_system.system().label(MyLabels::ScoreCheck))
+        .add_system(position_system.system().after(MyLabels::ScoreCheck))
+        .add_system(answer_system.system())
+        .add_system(scoreboard_system.system())
         .run();
 }
 
@@ -300,11 +278,8 @@ fn setup(
     });
 
     // Add cell
-    let cell_position = Position {
-        vertex: Vertex::None,
-    };
-    let cell_paint = Paint { color: Tint::None };
-    let cell_material = materials.add(cell_paint.color.material());
+    let cell_position = Vertex::None;
+    let cell_material = materials.add(Color::rgb(0.46, 0.64, 0.0).into());
     commands
         .spawn_bundle(SpriteBundle {
             material: cell_material.clone(),
@@ -312,11 +287,10 @@ fn setup(
                 (bounds.x - SPACING) / 3.0,
                 (bounds.x - SPACING) / 3.0,
             )),
-            transform: Transform::from_translation(cell_position.vertex.translation()),
+            transform: Transform::from_translation(cell_position.translation()),
             ..Default::default()
         })
         .insert(cell_position)
-        .insert(cell_paint)
         .insert(Timer::from_seconds(2.0, true));
 }
 
@@ -324,9 +298,9 @@ fn scoreboard_system(scoreboard: Res<GlobalState>, mut query: Query<&mut Text>) 
     let mut text = query.single_mut().unwrap();
     text.sections[0].value = format!(
         "Correct: {}, Wrong: {}, Score: {}",
-        scoreboard.score_position.correct() + scoreboard.score_color.correct(),
-        scoreboard.score_position.wrong() + scoreboard.score_color.wrong(),
-        scoreboard.score_position.f1_score() * scoreboard.score_color.f1_score(),
+        scoreboard.score_position.correct(),
+        scoreboard.score_position.wrong(),
+        scoreboard.score_position.f1_score()
     );
 }
 
@@ -342,36 +316,14 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
 
 fn position_system(
     mut scoreboard: ResMut<GlobalState>,
-    mut board_query: Query<(&mut Position, &mut Transform, &Timer)>,
+    mut board_query: Query<(&Vertex, &mut Transform, &Timer)>,
 ) {
-    if let Ok((mut position, mut transform, timer)) = board_query.single_mut() {
+    if let Ok((_vertex, mut transform, timer)) = board_query.single_mut() {
         if timer.just_finished() {
-            scoreboard.position_history.pop_front();
-            scoreboard
-                .position_history
-                .push_back(position.vertex.clone());
+            let new_position = scoreboard.cues.next();
 
-            position.vertex = position.vertex.next();
-            info!("position: {:?}", position.vertex);
-            transform.translation = position.vertex.translation();
-        }
-    }
-}
-
-fn color_system(
-    mut scoreboard: ResMut<GlobalState>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut board_query: Query<(&mut Paint, &mut Handle<ColorMaterial>, &Timer)>,
-) {
-    if let Ok((mut paint, mut material, timer)) = board_query.single_mut() {
-        if timer.just_finished() {
-            scoreboard.color_history.pop_front();
-            scoreboard.color_history.push_back(paint.color.clone());
-
-            paint.color = paint.color.next();
-            info!("color: {:?}", paint.color);
-            let new_material = materials.add(paint.color.material());
-            *material = new_material;
+            info!("position: {:?}", new_position);
+            transform.translation = new_position.translation();
         }
     }
 }
@@ -383,24 +335,14 @@ fn answer_system(mut scoreboard: ResMut<GlobalState>, keyboard_input: Res<Input<
             scoreboard.position_answer = true;
         }
     }
-
-    if !scoreboard.color_answer {
-        if keyboard_input.pressed(KeyCode::Right) {
-            info!("same color!");
-            scoreboard.color_answer = true;
-        }
-    }
 }
 
-fn score_system(
-    mut scoreboard: ResMut<GlobalState>,
-    mut query: Query<&Timer>,
-) {
+fn score_system(mut scoreboard: ResMut<GlobalState>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.single_mut() {
         if timer.just_finished() {
             info!("checking answer");
             if scoreboard.position_answer {
-                if *scoreboard.position_history.back().unwrap()  == *scoreboard.position_history.front().unwrap() {
+                if scoreboard.cues.is_match() {
                     scoreboard.score_position.true_pos += 1;
                     info!("position: true_positive");
                 } else {
@@ -408,7 +350,7 @@ fn score_system(
                     info!("position: false_positive");
                 }
             } else {
-                if *scoreboard.position_history.back().unwrap()  == *scoreboard.position_history.front().unwrap() {
+                if scoreboard.cues.is_match() {
                     scoreboard.score_position.false_neg += 1;
                     info!("position: false_neg");
                 } else {
@@ -417,26 +359,7 @@ fn score_system(
                 }
             }
 
-            if scoreboard.color_answer {
-                if *scoreboard.color_history.back().unwrap() == *scoreboard.color_history.front().unwrap() {
-                    scoreboard.score_color.true_pos += 1;
-                    info!("color: true_positive");
-                } else {
-                    scoreboard.score_color.false_pos += 1;
-                    info!("color: false_positive");
-                }
-            } else {
-                if *scoreboard.color_history.back().unwrap() == *scoreboard.color_history.front().unwrap() {
-                    scoreboard.score_color.false_neg += 1;
-                    info!("color: false_neg");
-                } else {
-                    scoreboard.score_color.true_neg += 1;
-                    info!("color: true_neg");
-                }
-            }
-
             scoreboard.position_answer = false;
-            scoreboard.color_answer = false;
         }
     }
 }
