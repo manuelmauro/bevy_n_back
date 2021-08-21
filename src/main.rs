@@ -1,4 +1,5 @@
 use bevy::{prelude::*, render::pass::ClearColor};
+use bevy_egui::{egui, EguiContext, EguiPlugin};
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
@@ -196,6 +197,7 @@ enum SystemLabel {
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
+        .add_plugin(EguiPlugin)
         .insert_resource(GlobalState::default())
         .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
         .add_startup_system(setup.system())
@@ -203,54 +205,16 @@ fn main() {
         .add_system(score_system.system().label(SystemLabel::ScoreCheck))
         .add_system(cue_system.system().after(SystemLabel::ScoreCheck))
         .add_system(answer_system.system())
-        .add_system(scoreboard_system.system())
+        .add_system(ui_example.system())
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     // Add the game's entities to our world
 
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
-    // scoreboard
-    commands.spawn_bundle(TextBundle {
-        text: Text {
-            sections: vec![
-                TextSection {
-                    value: "Score: ".to_string(),
-                    style: TextStyle {
-                        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                        font_size: 40.0,
-                        color: Color::rgb(0.5, 0.5, 1.0),
-                    },
-                },
-                TextSection {
-                    value: "".to_string(),
-                    style: TextStyle {
-                        font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-                        font_size: 40.0,
-                        color: Color::rgb(1.0, 0.5, 0.5),
-                    },
-                },
-            ],
-            ..Default::default()
-        },
-        style: Style {
-            position_type: PositionType::Absolute,
-            position: Rect {
-                top: Val::Px(5.0),
-                left: Val::Px(5.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        ..Default::default()
-    });
 
     // Add walls
     let wall_material = materials.add(Color::rgb(0.8, 0.8, 0.8).into());
@@ -301,16 +265,6 @@ fn setup(
         })
         .insert(cell)
         .insert(Timer::from_seconds(2.0, true));
-}
-
-fn scoreboard_system(scoreboard: Res<GlobalState>, mut query: Query<&mut Text>) {
-    let mut text = query.single_mut().unwrap();
-    text.sections[0].value = format!(
-        "Correct: {}, Wrong: {}, Score: {}",
-        scoreboard.score.correct(),
-        scoreboard.score.wrong(),
-        scoreboard.score.f1_score()
-    );
 }
 
 /// This system ticks all the `Timer` components on entities within the scene
@@ -370,4 +324,15 @@ fn score_system(mut scoreboard: ResMut<GlobalState>, mut query: Query<&Timer>) {
             scoreboard.answer = false;
         }
     }
+}
+
+// Note the usage of `ResMut`. Even though `ctx` method doesn't require
+// mutability, accessing the context from different threads will result
+// into panic if you don't enable `egui/multi_threaded` feature.
+fn ui_example(egui_context: ResMut<EguiContext>, global: Res<GlobalState>) {
+    egui::Window::new("Debug").show(egui_context.ctx(), |ui| {
+        ui.label(format!("Correct: {}", global.score.correct()));
+        ui.label(format!("Wrong: {}", global.score.wrong()));
+        ui.label(format!("F1 Score: {}", global.score.f1_score()));
+    });
 }
