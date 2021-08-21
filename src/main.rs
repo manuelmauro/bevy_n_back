@@ -9,7 +9,7 @@ const SIZE: f32 = 60.0;
 const SPACING: f32 = 20.0;
 
 #[derive(Clone, Debug, PartialEq)]
-enum Vertex {
+enum Cell {
     TopLeft,
     TopCenter,
     TopRight,
@@ -22,7 +22,7 @@ enum Vertex {
     None,
 }
 
-impl Vertex {
+impl Cell {
     fn translation(&self) -> Vec3 {
         Vec3::new(
             self.column() * (SIZE + SPACING),
@@ -33,53 +33,53 @@ impl Vertex {
 
     fn row(&self) -> f32 {
         match &self {
-            Vertex::TopLeft => 1.0,
-            Vertex::TopCenter => 1.0,
-            Vertex::TopRight => 1.0,
-            Vertex::CenterLeft => 0.0,
-            Vertex::Center => 0.0,
-            Vertex::CenterRight => 0.0,
-            Vertex::BottomLeft => -1.0,
-            Vertex::BottomCenter => -1.0,
-            Vertex::BottomRight => -1.0,
-            Vertex::None => 0.0,
+            Cell::TopLeft => 1.0,
+            Cell::TopCenter => 1.0,
+            Cell::TopRight => 1.0,
+            Cell::CenterLeft => 0.0,
+            Cell::Center => 0.0,
+            Cell::CenterRight => 0.0,
+            Cell::BottomLeft => -1.0,
+            Cell::BottomCenter => -1.0,
+            Cell::BottomRight => -1.0,
+            Cell::None => 0.0,
         }
     }
 
     fn column(&self) -> f32 {
         match &self {
-            Vertex::TopLeft => -1.0,
-            Vertex::TopCenter => 0.0,
-            Vertex::TopRight => 1.0,
-            Vertex::CenterLeft => -1.0,
-            Vertex::Center => 0.0,
-            Vertex::CenterRight => 1.0,
-            Vertex::BottomLeft => -1.0,
-            Vertex::BottomCenter => 0.0,
-            Vertex::BottomRight => 1.0,
-            Vertex::None => 0.0,
+            Cell::TopLeft => -1.0,
+            Cell::TopCenter => 0.0,
+            Cell::TopRight => 1.0,
+            Cell::CenterLeft => -1.0,
+            Cell::Center => 0.0,
+            Cell::CenterRight => 1.0,
+            Cell::BottomLeft => -1.0,
+            Cell::BottomCenter => 0.0,
+            Cell::BottomRight => 1.0,
+            Cell::None => 0.0,
         }
     }
 }
 
-impl Default for Vertex {
+impl Default for Cell {
     fn default() -> Self {
-        Vertex::None
+        Cell::None
     }
 }
 
-impl Distribution<Vertex> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Vertex {
+impl Distribution<Cell> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Cell {
         match rng.gen_range(0..=9) {
-            0 => Vertex::TopLeft,
-            1 => Vertex::TopCenter,
-            2 => Vertex::TopRight,
-            3 => Vertex::CenterLeft,
-            4 => Vertex::Center,
-            5 => Vertex::CenterRight,
-            6 => Vertex::BottomLeft,
-            7 => Vertex::BottomCenter,
-            _ => Vertex::BottomRight,
+            0 => Cell::TopLeft,
+            1 => Cell::TopCenter,
+            2 => Cell::TopRight,
+            3 => Cell::CenterLeft,
+            4 => Cell::Center,
+            5 => Cell::CenterRight,
+            6 => Cell::BottomLeft,
+            7 => Cell::BottomCenter,
+            _ => Cell::BottomRight,
         }
     }
 }
@@ -124,7 +124,7 @@ impl Default for Score {
 struct GlobalState {
     answer: bool,
     score: Score,
-    cues: CueChain<Vertex>,
+    cues: CueChain<Cell>,
 }
 
 impl Default for GlobalState {
@@ -287,7 +287,7 @@ fn setup(
     });
 
     // Add cell
-    let cell = Vertex::None;
+    let cell = Cell::None;
     let cell_material = materials.add(Color::rgb(0.66, 0.76, 0.0).into());
     commands
         .spawn_bundle(SpriteBundle {
@@ -325,9 +325,9 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
 
 fn cue_system(
     mut scoreboard: ResMut<GlobalState>,
-    mut board_query: Query<(&Vertex, &mut Transform, &Timer)>,
+    mut board_query: Query<(&Cell, &mut Transform, &Timer)>,
 ) {
-    if let Ok((_vertex, mut transform, timer)) = board_query.single_mut() {
+    if let Ok((_, mut transform, timer)) = board_query.single_mut() {
         if timer.just_finished() {
             let new_cue = scoreboard.cues.gen();
 
