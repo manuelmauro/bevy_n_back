@@ -25,8 +25,8 @@ enum Vertex {
 impl Vertex {
     fn translation(&self) -> Vec3 {
         Vec3::new(
-            &self.column() * (SIZE + SPACING),
-            &self.row() * (SIZE + SPACING),
+            self.column() * (SIZE + SPACING),
+            self.row() * (SIZE + SPACING),
             0.0,
         )
     }
@@ -101,8 +101,12 @@ impl Score {
     }
 
     fn f1_score(&self) -> f32 {
-        self.true_pos as f32
-            / (self.true_pos as f32 + 0.5 * (self.false_pos as f32 + self.false_neg as f32))
+        if self.true_pos + self.false_pos == 0 {
+            1.0
+        } else {
+            self.true_pos as f32
+                / (self.true_pos as f32 + 0.5 * (self.false_pos as f32 + self.false_neg as f32))
+        }
     }
 }
 
@@ -118,33 +122,34 @@ impl Default for Score {
 }
 
 struct GlobalState {
-    score: Score,
     answer: bool,
+    score: Score,
     cues: CueChain<Vertex>,
 }
 
 impl Default for GlobalState {
     fn default() -> Self {
         GlobalState {
-            score: Default::default(),
             answer: false,
-            cues: CueChain::new(3),
+            score: Default::default(),
+            cues: CueChain::with_n_back(2),
         }
     }
 }
 
+/// Memorization and generation of new cues.
 struct CueChain<T> {
     short_memory: VecDeque<T>,
 }
 
 impl<T: Default> CueChain<T> {
-    fn new(span: usize) -> Self {
+    fn with_n_back(n: usize) -> Self {
         let mut cc = CueChain {
             short_memory: VecDeque::new(),
         };
 
-        for _ in 0..span {
-            cc.short_memory.push_front(Default::default())
+        for _ in 0..n + 1 {
+            cc.short_memory.push_front(Default::default());
         }
 
         cc
@@ -173,14 +178,18 @@ where
     }
 }
 
-impl<T: PartialEq> CueChain<T> {
+impl<T: PartialEq + Default> CueChain<T> {
     fn is_match(&self) -> bool {
-        self.short_memory.back() == self.short_memory.front()
+        if self.short_memory.front() != Some(&Default::default()) {
+            self.short_memory.back() == self.short_memory.front()
+        } else {
+            false
+        }
     }
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
-enum MyLabels {
+enum SystemLabel {
     ScoreCheck,
 }
 
@@ -188,11 +197,11 @@ fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
         .insert_resource(GlobalState::default())
-        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
         .add_startup_system(setup.system())
         .add_system(timer_system.system())
-        .add_system(score_system.system().label(MyLabels::ScoreCheck))
-        .add_system(cue_system.system().after(MyLabels::ScoreCheck))
+        .add_system(score_system.system().label(SystemLabel::ScoreCheck))
+        .add_system(cue_system.system().after(SystemLabel::ScoreCheck))
         .add_system(answer_system.system())
         .add_system(scoreboard_system.system())
         .run();
@@ -279,10 +288,10 @@ fn setup(
 
     // Add cell
     let cell = Vertex::None;
-    let cell_material = materials.add(Color::rgb(0.46, 0.64, 0.0).into());
+    let cell_material = materials.add(Color::rgb(0.66, 0.76, 0.0).into());
     commands
         .spawn_bundle(SpriteBundle {
-            material: cell_material.clone(),
+            material: cell_material,
             sprite: Sprite::new(Vec2::new(
                 (bounds.x - SPACING) / 3.0,
                 (bounds.x - SPACING) / 3.0,
