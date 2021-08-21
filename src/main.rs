@@ -118,33 +118,33 @@ impl Default for Score {
 }
 
 struct GlobalState {
-    score_position: Score,
-    position_answer: bool,
+    score: Score,
+    answer: bool,
     cues: CueChain<Vertex>,
 }
 
 impl Default for GlobalState {
     fn default() -> Self {
         GlobalState {
-            score_position: Default::default(),
-            position_answer: false,
+            score: Default::default(),
+            answer: false,
             cues: CueChain::new(3),
         }
     }
 }
 
 struct CueChain<T> {
-    history: VecDeque<T>,
+    short_memory: VecDeque<T>,
 }
 
 impl<T: Default> CueChain<T> {
     fn new(span: usize) -> Self {
         let mut cc = CueChain {
-            history: VecDeque::new(),
+            short_memory: VecDeque::new(),
         };
 
         for _ in 0..span {
-            cc.history.push_front(Default::default())
+            cc.short_memory.push_front(Default::default())
         }
 
         cc
@@ -156,26 +156,26 @@ where
     Standard: Distribution<T>,
     T: Clone + PartialEq + Default,
 {
-    fn next(&mut self) -> T {
+    fn gen(&mut self) -> T {
         let mut rng = rand::thread_rng();
         let y = rng.gen::<f64>();
 
-        let cue = if y < 0.25 && *self.history.front().unwrap() != Default::default() {
-            self.history.front().unwrap().clone()
+        let cue = if y < 0.25 && *self.short_memory.front().unwrap() != Default::default() {
+            self.short_memory.front().unwrap().clone()
         } else {
             rand::random()
         };
 
-        self.history.push_back(cue);
-        self.history.pop_front();
+        self.short_memory.push_back(cue);
+        self.short_memory.pop_front();
 
-        (*self.history.back().unwrap()).clone()
+        (*self.short_memory.back().unwrap()).clone()
     }
 }
 
 impl<T: PartialEq> CueChain<T> {
     fn is_match(&self) -> bool {
-        self.history.back() == self.history.front()
+        self.short_memory.back() == self.short_memory.front()
     }
 }
 
@@ -192,7 +192,7 @@ fn main() {
         .add_startup_system(setup.system())
         .add_system(timer_system.system())
         .add_system(score_system.system().label(MyLabels::ScoreCheck))
-        .add_system(position_system.system().after(MyLabels::ScoreCheck))
+        .add_system(cue_system.system().after(MyLabels::ScoreCheck))
         .add_system(answer_system.system())
         .add_system(scoreboard_system.system())
         .run();
@@ -278,7 +278,7 @@ fn setup(
     });
 
     // Add cell
-    let cell_position = Vertex::None;
+    let cell = Vertex::None;
     let cell_material = materials.add(Color::rgb(0.46, 0.64, 0.0).into());
     commands
         .spawn_bundle(SpriteBundle {
@@ -287,10 +287,10 @@ fn setup(
                 (bounds.x - SPACING) / 3.0,
                 (bounds.x - SPACING) / 3.0,
             )),
-            transform: Transform::from_translation(cell_position.translation()),
+            transform: Transform::from_translation(cell.translation()),
             ..Default::default()
         })
-        .insert(cell_position)
+        .insert(cell)
         .insert(Timer::from_seconds(2.0, true));
 }
 
@@ -298,9 +298,9 @@ fn scoreboard_system(scoreboard: Res<GlobalState>, mut query: Query<&mut Text>) 
     let mut text = query.single_mut().unwrap();
     text.sections[0].value = format!(
         "Correct: {}, Wrong: {}, Score: {}",
-        scoreboard.score_position.correct(),
-        scoreboard.score_position.wrong(),
-        scoreboard.score_position.f1_score()
+        scoreboard.score.correct(),
+        scoreboard.score.wrong(),
+        scoreboard.score.f1_score()
     );
 }
 
@@ -314,25 +314,25 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
     }
 }
 
-fn position_system(
+fn cue_system(
     mut scoreboard: ResMut<GlobalState>,
     mut board_query: Query<(&Vertex, &mut Transform, &Timer)>,
 ) {
     if let Ok((_vertex, mut transform, timer)) = board_query.single_mut() {
         if timer.just_finished() {
-            let new_position = scoreboard.cues.next();
+            let new_cue = scoreboard.cues.gen();
 
-            info!("position: {:?}", new_position);
-            transform.translation = new_position.translation();
+            info!("cue: {:?}", new_cue);
+            transform.translation = new_cue.translation();
         }
     }
 }
 
 fn answer_system(mut scoreboard: ResMut<GlobalState>, keyboard_input: Res<Input<KeyCode>>) {
-    if !scoreboard.position_answer {
+    if !scoreboard.answer {
         if keyboard_input.pressed(KeyCode::Left) {
-            info!("same position!");
-            scoreboard.position_answer = true;
+            info!("matching!");
+            scoreboard.answer = true;
         }
     }
 }
@@ -340,26 +340,25 @@ fn answer_system(mut scoreboard: ResMut<GlobalState>, keyboard_input: Res<Input<
 fn score_system(mut scoreboard: ResMut<GlobalState>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.single_mut() {
         if timer.just_finished() {
-            info!("checking answer");
-            if scoreboard.position_answer {
+            if scoreboard.answer {
                 if scoreboard.cues.is_match() {
-                    scoreboard.score_position.true_pos += 1;
-                    info!("position: true_positive");
+                    scoreboard.score.true_pos += 1;
+                    info!("true_positive");
                 } else {
-                    scoreboard.score_position.false_pos += 1;
-                    info!("position: false_positive");
+                    scoreboard.score.false_pos += 1;
+                    info!("false_positive");
                 }
             } else {
                 if scoreboard.cues.is_match() {
-                    scoreboard.score_position.false_neg += 1;
-                    info!("position: false_neg");
+                    scoreboard.score.false_neg += 1;
+                    info!("false_neg");
                 } else {
-                    scoreboard.score_position.true_neg += 1;
-                    info!("position: true_neg");
+                    scoreboard.score.true_neg += 1;
+                    info!("true_neg");
                 }
             }
 
-            scoreboard.position_answer = false;
+            scoreboard.answer = false;
         }
     }
 }
