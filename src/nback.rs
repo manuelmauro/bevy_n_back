@@ -1,4 +1,5 @@
 use super::cue::Cell;
+use bevy::prelude::info;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
@@ -67,6 +68,26 @@ impl GameState {
     pub fn restart(&mut self) {
         self.score = Default::default();
         self.cues = CueChain::with_n_back(self.cues.n_back());
+    }
+
+    pub fn check_answer(&mut self, answer: bool) {
+        if answer {
+            if self.cues.is_match() {
+                self.score.record_tp();
+                info!("true_positive");
+            } else {
+                self.score.record_fp();
+                info!("false_positive");
+            }
+        } else {
+            if self.cues.is_match() {
+                self.score.record_fn();
+                info!("false_neg");
+            } else {
+                self.score.record_tn();
+                info!("true_neg");
+            }
+        }
     }
 }
 

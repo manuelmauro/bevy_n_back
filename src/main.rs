@@ -23,6 +23,13 @@ enum SystemLabel {
 
 fn main() {
     App::build()
+        .insert_resource(WindowDescriptor {
+            title: "nback!".to_string(),
+            width: 360.,
+            height: 640.,
+            resizable: false,
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
         .insert_resource(GlobalState::default())
@@ -111,7 +118,6 @@ fn cue_system(
     if let Ok((_, mut transform, timer)) = board_query.single_mut() {
         if timer.just_finished() {
             let new_cue = globals.game.cues.gen();
-
             info!("cue: {:?}", new_cue);
             transform.translation = new_cue.translation();
         }
@@ -120,8 +126,7 @@ fn cue_system(
 
 fn answer_system(mut globals: ResMut<GlobalState>, keyboard_input: Res<Input<KeyCode>>) {
     if !globals.answer {
-        if keyboard_input.pressed(KeyCode::Left) {
-            info!("matching!");
+        if keyboard_input.pressed(KeyCode::A) {
             globals.answer = true;
         }
     }
@@ -130,24 +135,8 @@ fn answer_system(mut globals: ResMut<GlobalState>, keyboard_input: Res<Input<Key
 fn score_system(mut globals: ResMut<GlobalState>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.single_mut() {
         if timer.just_finished() {
-            if globals.answer {
-                if globals.game.cues.is_match() {
-                    globals.game.score.record_tp();
-                    info!("true_positive");
-                } else {
-                    globals.game.score.record_fp();
-                    info!("false_positive");
-                }
-            } else {
-                if globals.game.cues.is_match() {
-                    globals.game.score.record_fn();
-                    info!("false_neg");
-                } else {
-                    globals.game.score.record_tn();
-                    info!("true_neg");
-                }
-            }
-
+            let answer = globals.answer;
+            globals.game.check_answer(answer);
             globals.answer = false;
         }
     }
