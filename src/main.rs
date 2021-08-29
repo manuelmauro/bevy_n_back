@@ -6,18 +6,6 @@ use bevy_nback::{
     nback::GameState,
 };
 
-struct GlobalState {
-    game: GameState,
-}
-
-impl Default for GlobalState {
-    fn default() -> Self {
-        GlobalState {
-            game: Default::default(),
-        }
-    }
-}
-
 struct CellMaterials {
     one: Handle<ColorMaterial>,
     two: Handle<ColorMaterial>,
@@ -71,7 +59,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
         .init_resource::<CellMaterials>()
-        .insert_resource(GlobalState::default())
+        .insert_resource(GameState::default())
         .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
         .add_startup_system(setup.system())
         .add_system(timer_system.system())
@@ -161,52 +149,52 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
 }
 
 fn cue_system(
-    mut globals: ResMut<GlobalState>,
+    mut game: ResMut<GameState>,
     cell_materials: Res<CellMaterials>,
     mut board_query: Query<(&Cell, &mut Transform, &mut Handle<ColorMaterial>, &Timer)>,
 ) {
     if let Ok((_, mut transform, mut material, timer)) = board_query.single_mut() {
         if timer.just_finished() {
-            let new_cell = globals.game.cells.gen();
+            let new_cell = game.cells.gen();
             info!("cue: {:?}", new_cell);
             transform.translation = new_cell.translation();
 
-            let new_pigment = globals.game.pigments.gen();
+            let new_pigment = game.pigments.gen();
             *material = cell_materials.from(new_pigment);
         }
     }
 }
 
 fn answer_system(
-    mut globals: ResMut<GlobalState>,
+    mut game: ResMut<GameState>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&Timer>,
 ) {
     if keyboard_input.pressed(KeyCode::W) {
-        globals.game.answer.w();
+        game.answer.w();
     }
     if keyboard_input.pressed(KeyCode::A) {
-        globals.game.answer.a();
+        game.answer.a();
     }
     if keyboard_input.pressed(KeyCode::S) {
-        globals.game.answer.s();
+        game.answer.s();
     }
     if keyboard_input.pressed(KeyCode::D) {
-        globals.game.answer.d();
+        game.answer.d();
     }
 
     if let Ok(timer) = query.single_mut() {
         if timer.just_finished() {
-            globals.game.answer.reset();
+            game.answer.reset();
             info!("reset answer");
         }
     }
 }
 
-fn score_system(mut globals: ResMut<GlobalState>, mut query: Query<&Timer>) {
+fn score_system(mut game: ResMut<GameState>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.single_mut() {
         if timer.just_finished() {
-            globals.game.check_answer();
+            game.check_answer();
         }
     }
 }
@@ -214,17 +202,17 @@ fn score_system(mut globals: ResMut<GlobalState>, mut query: Query<&Timer>) {
 // Note the usage of `ResMut`. Even though `ctx` method doesn't require
 // mutability, accessing the context from different threads will result
 // into panic if you don't enable `egui/multi_threaded` feature.
-fn debug_ui(egui_context: ResMut<EguiContext>, mut globals: ResMut<GlobalState>) {
+fn debug_ui(egui_context: ResMut<EguiContext>, mut game: ResMut<GameState>) {
     egui::Window::new("debug")
         .resizable(false)
         .show(egui_context.ctx(), |ui| {
-            ui.label(format!("n back: {}", globals.game.cells.n_back()));
-            ui.label(format!("correct: {}", globals.game.score.correct()));
-            ui.label(format!("wrong: {}", globals.game.score.wrong()));
-            ui.label(format!("F1 score: {}", globals.game.score.f1_score()));
+            ui.label(format!("n back: {}", game.cells.n_back()));
+            ui.label(format!("correct: {}", game.score.correct()));
+            ui.label(format!("wrong: {}", game.score.wrong()));
+            ui.label(format!("F1 score: {}", game.score.f1_score()));
 
             if ui.button("Restart").clicked() {
-                globals.game.restart()
+                game.restart()
             }
         });
 }
