@@ -1,17 +1,55 @@
-use bevy::{prelude::*, render::pass::ClearColor};
+use bevy::{prelude::*, render::pass::ClearColor, window::WindowMode};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
-use bevy_nback::{constant::SPACING, cue::Cell, nback::GameState};
+use bevy_nback::{
+    constant::SPACING,
+    cue::{Cell, Pigment},
+    nback::GameState,
+};
 
 struct GlobalState {
-    answer: bool,
     game: GameState,
 }
 
 impl Default for GlobalState {
     fn default() -> Self {
         GlobalState {
-            answer: false,
             game: Default::default(),
+        }
+    }
+}
+
+struct CellMaterials {
+    one: Handle<ColorMaterial>,
+    two: Handle<ColorMaterial>,
+    three: Handle<ColorMaterial>,
+    four: Handle<ColorMaterial>,
+    five: Handle<ColorMaterial>,
+    six: Handle<ColorMaterial>,
+}
+
+impl CellMaterials {
+    fn from(&self, pigment: Pigment) -> Handle<ColorMaterial> {
+        match pigment {
+            Pigment::A => self.one.clone(),
+            Pigment::B => self.two.clone(),
+            Pigment::C => self.three.clone(),
+            Pigment::D => self.four.clone(),
+            Pigment::E => self.five.clone(),
+            Pigment::None => self.six.clone(),
+        }
+    }
+}
+
+impl FromWorld for CellMaterials {
+    fn from_world(world: &mut World) -> Self {
+        let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+        CellMaterials {
+            one: materials.add(Color::rgb(1.0, 0.56, 0.0).into()),
+            two: materials.add(Color::rgb(0.60, 0.05, 1.0).into()),
+            three: materials.add(Color::rgb(1.0, 0.0, 0.65).into()),
+            four: materials.add(Color::rgb(0.12, 1.0, 0.14).into()),
+            five: materials.add(Color::rgb(0.12, 0.80, 1.0).into()),
+            six: materials.add(Color::rgb(0.0, 0.0, 0.0).into()),
         }
     }
 }
@@ -27,32 +65,43 @@ fn main() {
             title: "nback!".to_string(),
             width: 360.,
             height: 640.,
-            resizable: false,
+            mode: WindowMode::Windowed,
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
+        .init_resource::<CellMaterials>()
         .insert_resource(GlobalState::default())
         .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
         .add_startup_system(setup.system())
         .add_system(timer_system.system())
         .add_system(score_system.system().label(SystemLabel::ScoreCheck))
         .add_system(cue_system.system().after(SystemLabel::ScoreCheck))
-        .add_system(answer_system.system())
+        .add_system(answer_system.system().after(SystemLabel::ScoreCheck))
         .add_system(debug_ui.system())
         .run();
 }
 
-fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    cell_materials: Res<CellMaterials>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+) {
     // Add the game's entities to our world
+
+    // audio
+    let music = asset_server.load("sounds/Cyberpunk Moonlight Sonata.mp3");
+    audio.play(music);
 
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
 
     // Add walls
-    let wall_material = materials.add(Color::rgb(0.8, 0.8, 0.8).into());
-    let wall_thickness = 10.0;
+    let wall_material = materials.add(Color::rgb(0.85, 0.85, 0.85).into());
+    let wall_thickness = 8.0;
     let bounds = Vec2::new(240.0, 240.0);
 
     // left
@@ -86,7 +135,7 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 
     // Add cell
     let cell = Cell::None;
-    let cell_material = materials.add(Color::rgb(0.66, 0.76, 0.0).into());
+    let cell_material = cell_materials.one.clone();
     commands
         .spawn_bundle(SpriteBundle {
             material: cell_material,
@@ -113,21 +162,43 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
 
 fn cue_system(
     mut globals: ResMut<GlobalState>,
-    mut board_query: Query<(&Cell, &mut Transform, &Timer)>,
+    cell_materials: Res<CellMaterials>,
+    mut board_query: Query<(&Cell, &mut Transform, &mut Handle<ColorMaterial>, &Timer)>,
 ) {
-    if let Ok((_, mut transform, timer)) = board_query.single_mut() {
+    if let Ok((_, mut transform, mut material, timer)) = board_query.single_mut() {
         if timer.just_finished() {
-            let new_cue = globals.game.cues.gen();
-            info!("cue: {:?}", new_cue);
-            transform.translation = new_cue.translation();
+            let new_cell = globals.game.cells.gen();
+            info!("cue: {:?}", new_cell);
+            transform.translation = new_cell.translation();
+
+            let new_pigment = globals.game.pigments.gen();
+            *material = cell_materials.from(new_pigment);
         }
     }
 }
 
-fn answer_system(mut globals: ResMut<GlobalState>, keyboard_input: Res<Input<KeyCode>>) {
-    if !globals.answer {
-        if keyboard_input.pressed(KeyCode::A) {
-            globals.answer = true;
+fn answer_system(
+    mut globals: ResMut<GlobalState>,
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<&Timer>,
+) {
+    if keyboard_input.pressed(KeyCode::W) {
+        globals.game.answer.w();
+    }
+    if keyboard_input.pressed(KeyCode::A) {
+        globals.game.answer.a();
+    }
+    if keyboard_input.pressed(KeyCode::S) {
+        globals.game.answer.s();
+    }
+    if keyboard_input.pressed(KeyCode::D) {
+        globals.game.answer.d();
+    }
+
+    if let Ok(timer) = query.single_mut() {
+        if timer.just_finished() {
+            globals.game.answer.reset();
+            info!("reset answer");
         }
     }
 }
@@ -135,9 +206,7 @@ fn answer_system(mut globals: ResMut<GlobalState>, keyboard_input: Res<Input<Key
 fn score_system(mut globals: ResMut<GlobalState>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.single_mut() {
         if timer.just_finished() {
-            let answer = globals.answer;
-            globals.game.check_answer(answer);
-            globals.answer = false;
+            globals.game.check_answer();
         }
     }
 }
@@ -149,7 +218,7 @@ fn debug_ui(egui_context: ResMut<EguiContext>, mut globals: ResMut<GlobalState>)
     egui::Window::new("debug")
         .resizable(false)
         .show(egui_context.ctx(), |ui| {
-            ui.label(format!("n back: {}", globals.game.cues.n_back()));
+            ui.label(format!("n back: {}", globals.game.cells.n_back()));
             ui.label(format!("correct: {}", globals.game.score.correct()));
             ui.label(format!("wrong: {}", globals.game.score.wrong()));
             ui.label(format!("F1 score: {}", globals.game.score.f1_score()));

@@ -1,4 +1,4 @@
-use super::cue::Cell;
+use crate::cue::{Cell, Pigment};
 use bevy::prelude::info;
 use rand::{
     distributions::{Distribution, Standard},
@@ -11,6 +11,49 @@ pub struct Score {
     true_pos: usize,
     false_neg: usize,
     true_neg: usize,
+}
+
+pub struct Answer {
+    w: bool,
+    a: bool,
+    s: bool,
+    d: bool,
+}
+
+impl Answer {
+    pub fn w(&mut self) {
+        self.w = true;
+    }
+
+    pub fn a(&mut self) {
+        self.a = true;
+    }
+
+    pub fn s(&mut self) {
+        self.s = true;
+    }
+
+    pub fn d(&mut self) {
+        self.d = true;
+    }
+
+    pub fn reset(&mut self) {
+        self.w = false;
+        self.a = false;
+        self.s = false;
+        self.d = false;
+    }
+}
+
+impl Default for Answer {
+    fn default() -> Self {
+        Answer {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+        }
+    }
 }
 
 impl Score {
@@ -61,18 +104,21 @@ impl Default for Score {
 
 pub struct GameState {
     pub score: Score,
-    pub cues: CueChain<Cell>,
+    pub answer: Answer,
+    pub cells: CueChain<Cell>,
+    pub pigments: CueChain<Pigment>,
 }
 
 impl GameState {
     pub fn restart(&mut self) {
         self.score = Default::default();
-        self.cues = CueChain::with_n_back(self.cues.n_back());
+        self.cells = CueChain::with_n_back(self.cells.n_back());
+        self.pigments = CueChain::with_n_back(self.pigments.n_back());
     }
 
-    pub fn check_answer(&mut self, answer: bool) {
-        if answer {
-            if self.cues.is_match() {
+    pub fn check_answer(&mut self) {
+        if self.answer.a {
+            if self.cells.is_match() {
                 self.score.record_tp();
                 info!("true_positive");
             } else {
@@ -80,7 +126,25 @@ impl GameState {
                 info!("false_positive");
             }
         } else {
-            if self.cues.is_match() {
+            if self.cells.is_match() {
+                self.score.record_fn();
+                info!("false_neg");
+            } else {
+                self.score.record_tn();
+                info!("true_neg");
+            }
+        }
+
+        if self.answer.d {
+            if self.pigments.is_match() {
+                self.score.record_tp();
+                info!("true_positive");
+            } else {
+                self.score.record_fp();
+                info!("false_positive");
+            }
+        } else {
+            if self.pigments.is_match() {
                 self.score.record_fn();
                 info!("false_neg");
             } else {
@@ -95,7 +159,9 @@ impl Default for GameState {
     fn default() -> Self {
         GameState {
             score: Default::default(),
-            cues: Default::default(),
+            answer: Default::default(),
+            cells: Default::default(),
+            pigments: Default::default(),
         }
     }
 }

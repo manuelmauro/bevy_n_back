@@ -80,3 +80,31 @@ impl Distribution<Cell> for Standard {
         }
     }
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Pigment {
+    A,
+    B,
+    C,
+    D,
+    E,
+    None,
+}
+
+impl Default for Pigment {
+    fn default() -> Self {
+        Pigment::None
+    }
+}
+
+impl Distribution<Pigment> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Pigment {
+        match rng.gen_range(0..=5) {
+            0 => Pigment::A,
+            1 => Pigment::B,
+            2 => Pigment::C,
+            3 => Pigment::D,
+            _ => Pigment::E,
+        }
+    }
+}
