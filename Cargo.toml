@@ -1,14 +1,42 @@
 [package]
+authors = ["Manuel Mauro <manuel.mauro@protonmail.com>"]
 edition = "2018"
-name = "bevy_nback"
+name = "infty_n_back"
+publish = false
 version = "0.1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.dev]
+opt-level = 1
+
+[features]
+default = [
+  "bevy/bevy_gltf",
+  "bevy/bevy_winit",
+  "bevy/render",
+  "bevy/png",
+  "bevy_kira_audio/flac",
+]
+
+native = [
+  "bevy/bevy_wgpu",
+]
+
+web = [
+  "bevy_webgl2",
+]
+
+dev = [
+  "bevy/dynamic",
+  "native",
+]
 
 [dependencies]
-bevy = {version = "0.5.0", features = ["dynamic"]}
+bevy = {version = "0.5.0", default-features = false}
 bevy_egui = "0.6.2"
+bevy_kira_audio = "0.5.1"
+bevy_webgl2 = {version = "0.5.0", optional = true}
 rand = "0.8.4"
+winit = "0.24.0"
 
-[toolchain]
-channel = "nightly"
+[build-dependencies]
+embed-resource = "1.4"

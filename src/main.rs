@@ -1,10 +1,19 @@
-use bevy::{prelude::*, render::pass::ClearColor, window::WindowMode};
+// disable console on windows for release builds
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+#[cfg(target_arch = "wasm32")]
+use bevy_webgl2;
+
+use bevy::prelude::{App, ClearColor, Color, WindowDescriptor};
+use bevy::DefaultPlugins;
+use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
-use bevy_nback::{
+use infty_n_back::{
     constant::SPACING,
     cue::{Cell, Pigment},
     nback::GameState,
 };
+use bevy_kira_audio::{Audio, AudioPlugin};
 
 struct CellMaterials {
     one: Handle<ColorMaterial>,
@@ -48,26 +57,32 @@ enum SystemLabel {
 }
 
 fn main() {
-    App::build()
-        .insert_resource(WindowDescriptor {
-            title: "nback!".to_string(),
-            width: 360.,
-            height: 640.,
-            mode: WindowMode::Windowed,
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(EguiPlugin)
-        .init_resource::<CellMaterials>()
-        .insert_resource(GameState::default())
-        .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
-        .add_startup_system(setup.system())
-        .add_system(timer_system.system())
-        .add_system(score_system.system().label(SystemLabel::ScoreCheck))
-        .add_system(cue_system.system().after(SystemLabel::ScoreCheck))
-        .add_system(answer_system.system().after(SystemLabel::ScoreCheck))
-        .add_system(debug_ui.system())
-        .run();
+    let mut app = App::build();
+
+    app.insert_resource(WindowDescriptor {
+        title: "nback!".to_string(),
+        width: 360.,
+        height: 640.,
+        mode: WindowMode::Windowed,
+        ..Default::default()
+    })
+    .add_plugins(DefaultPlugins)
+    .add_plugin(EguiPlugin)
+    .add_plugin(AudioPlugin)
+    .init_resource::<CellMaterials>()
+    .insert_resource(GameState::default())
+    .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
+    .add_startup_system(setup.system())
+    .add_system(timer_system.system())
+    .add_system(score_system.system().label(SystemLabel::ScoreCheck))
+    .add_system(cue_system.system().after(SystemLabel::ScoreCheck))
+    .add_system(answer_system.system().after(SystemLabel::ScoreCheck))
+    .add_system(debug_ui.system());
+
+    #[cfg(target_arch = "wasm32")]
+    app.add_plugin(bevy_webgl2::WebGL2Plugin);
+
+    app.run();
 }
 
 fn setup(
@@ -80,8 +95,7 @@ fn setup(
     // Add the game's entities to our world
 
     // audio
-    let music = asset_server.load("sounds/Cyberpunk Moonlight Sonata.mp3");
-    audio.play(music);
+    audio.play_looped(asset_server.load("sounds/Cyberpunk-Moonlight-Sonata.flac"));
 
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
