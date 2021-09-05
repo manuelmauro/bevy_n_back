@@ -1,10 +1,12 @@
-use crate::cue::{Cell, Pigment};
 use bevy::prelude::info;
+use cue::{Cell, Pigment};
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
 use std::collections::VecDeque;
+
+pub mod cue;
 
 pub struct Score {
     false_pos: usize,
@@ -102,14 +104,18 @@ impl Default for Score {
     }
 }
 
-pub struct GameState {
+pub struct NBack {
     pub score: Score,
     pub answer: Answer,
     pub cells: CueChain<Cell>,
     pub pigments: CueChain<Pigment>,
 }
 
-impl GameState {
+impl NBack {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
     pub fn restart(&mut self) {
         self.score = Default::default();
         self.cells = CueChain::with_n_back(self.cells.n_back());
@@ -155,14 +161,22 @@ impl GameState {
     }
 }
 
-impl Default for GameState {
+impl Default for NBack {
     fn default() -> Self {
-        GameState {
+        NBack {
             score: Default::default(),
             answer: Default::default(),
             cells: Default::default(),
             pigments: Default::default(),
         }
+    }
+}
+
+impl Iterator for NBack {
+    type Item = (Cell, Pigment);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some((self.cells.gen(), self.pigments.gen()))
     }
 }
 

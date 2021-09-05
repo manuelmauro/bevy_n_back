@@ -8,12 +8,12 @@ use bevy::prelude::{App, ClearColor, Color, WindowDescriptor};
 use bevy::DefaultPlugins;
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
+use bevy_kira_audio::{Audio, AudioPlugin};
 use infty_n_back::{
     constant::SPACING,
-    cue::{Cell, Pigment},
-    nback::GameState,
+    nback::cue::{Cell, Pigment},
+    nback::NBack,
 };
-use bevy_kira_audio::{Audio, AudioPlugin};
 
 struct CellMaterials {
     one: Handle<ColorMaterial>,
@@ -52,7 +52,7 @@ impl FromWorld for CellMaterials {
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
-enum SystemLabel {
+enum Label {
     ScoreCheck,
 }
 
@@ -70,13 +70,13 @@ fn main() {
     .add_plugin(EguiPlugin)
     .add_plugin(AudioPlugin)
     .init_resource::<CellMaterials>()
-    .insert_resource(GameState::default())
+    .insert_resource(NBack::default())
     .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
     .add_startup_system(setup.system())
     .add_system(timer_system.system())
-    .add_system(score_system.system().label(SystemLabel::ScoreCheck))
-    .add_system(cue_system.system().after(SystemLabel::ScoreCheck))
-    .add_system(answer_system.system().after(SystemLabel::ScoreCheck))
+    .add_system(score_system.system().label(Label::ScoreCheck))
+    .add_system(cue_system.system().after(Label::ScoreCheck))
+    .add_system(answer_system.system().after(Label::ScoreCheck))
     .add_system(debug_ui.system());
 
     #[cfg(target_arch = "wasm32")]
@@ -163,24 +163,23 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
 }
 
 fn cue_system(
-    mut game: ResMut<GameState>,
+    mut game: ResMut<NBack>,
     cell_materials: Res<CellMaterials>,
     mut board_query: Query<(&Cell, &mut Transform, &mut Handle<ColorMaterial>, &Timer)>,
 ) {
     if let Ok((_, mut transform, mut material, timer)) = board_query.single_mut() {
         if timer.just_finished() {
-            let new_cell = game.cells.gen();
-            info!("cue: {:?}", new_cell);
-            transform.translation = new_cell.translation();
-
-            let new_pigment = game.pigments.gen();
-            *material = cell_materials.from(new_pigment);
+            if let Some((new_cell, new_pigment)) = game.next() {
+                info!("cue: {:?}", new_cell);
+                transform.translation = new_cell.translation();
+                *material = cell_materials.from(new_pigment);
+            }
         }
     }
 }
 
 fn answer_system(
-    mut game: ResMut<GameState>,
+    mut game: ResMut<NBack>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&Timer>,
 ) {
@@ -205,7 +204,7 @@ fn answer_system(
     }
 }
 
-fn score_system(mut game: ResMut<GameState>, mut query: Query<&Timer>) {
+fn score_system(mut game: ResMut<NBack>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.single_mut() {
         if timer.just_finished() {
             game.check_answer();
@@ -216,7 +215,7 @@ fn score_system(mut game: ResMut<GameState>, mut query: Query<&Timer>) {
 // Note the usage of `ResMut`. Even though `ctx` method doesn't require
 // mutability, accessing the context from different threads will result
 // into panic if you don't enable `egui/multi_threaded` feature.
-fn debug_ui(egui_context: ResMut<EguiContext>, mut game: ResMut<GameState>) {
+fn debug_ui(egui_context: ResMut<EguiContext>, mut game: ResMut<NBack>) {
     egui::Window::new("debug")
         .resizable(false)
         .show(egui_context.ctx(), |ui| {

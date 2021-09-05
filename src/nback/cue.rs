@@ -1,4 +1,4 @@
-use super::constant::{SIZE, SPACING};
+use crate::constant::{SIZE, SPACING};
 use bevy::prelude::*;
 use rand::{
     distributions::{Distribution, Standard},
