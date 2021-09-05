@@ -1,5 +1,3 @@
-use crate::constant::{SIZE, SPACING};
-use bevy::prelude::*;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
@@ -17,46 +15,6 @@ pub enum Cell {
     BottomCenter,
     BottomRight,
     None,
-}
-
-impl Cell {
-    pub fn translation(&self) -> Vec3 {
-        Vec3::new(
-            self.column() * (SIZE + SPACING),
-            self.row() * (SIZE + SPACING),
-            0.0,
-        )
-    }
-
-    fn row(&self) -> f32 {
-        match &self {
-            Cell::TopLeft => 1.0,
-            Cell::TopCenter => 1.0,
-            Cell::TopRight => 1.0,
-            Cell::CenterLeft => 0.0,
-            Cell::Center => 0.0,
-            Cell::CenterRight => 0.0,
-            Cell::BottomLeft => -1.0,
-            Cell::BottomCenter => -1.0,
-            Cell::BottomRight => -1.0,
-            Cell::None => 0.0,
-        }
-    }
-
-    fn column(&self) -> f32 {
-        match &self {
-            Cell::TopLeft => -1.0,
-            Cell::TopCenter => 0.0,
-            Cell::TopRight => 1.0,
-            Cell::CenterLeft => -1.0,
-            Cell::Center => 0.0,
-            Cell::CenterRight => 1.0,
-            Cell::BottomLeft => -1.0,
-            Cell::BottomCenter => 0.0,
-            Cell::BottomRight => 1.0,
-            Cell::None => 0.0,
-        }
-    }
 }
 
 impl Default for Cell {

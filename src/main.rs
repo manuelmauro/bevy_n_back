@@ -145,7 +145,7 @@ fn setup(
                 (bounds.x - SPACING) / 3.0,
                 (bounds.x - SPACING) / 3.0,
             )),
-            transform: Transform::from_translation(cell.translation()),
+            transform: Transform::from_translation((&cell).into()),
             ..Default::default()
         })
         .insert(cell)
@@ -171,7 +171,7 @@ fn cue_system(
         if timer.just_finished() {
             if let Some((new_cell, new_pigment)) = game.next() {
                 info!("cue: {:?}", new_cell);
-                transform.translation = new_cell.translation();
+                transform.translation = (&new_cell).into();
                 *material = cell_materials.from(new_pigment);
             }
         }
