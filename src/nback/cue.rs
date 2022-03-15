@@ -1,9 +1,10 @@
+use bevy::prelude::Component;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Component, Debug, PartialEq)]
 pub enum Cell {
     TopLeft,
     TopCenter,

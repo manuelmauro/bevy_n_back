@@ -4,10 +4,9 @@ An infinite run of Dual-n-Back on [Bevy engine][bevy].
 
 ## How to run the game
 
-- Start the native app: `cargo run --features native`
-- Start the web build: `cargo make serve` (requires `cargo-make`; to install run `cargo install cargo-make`)
-
-You should keep the `credits` directory up to date. The release workflow automatically includes the directory in every build.
+- Run the native version (`cargo run`)
+- Easy setup for running the web (`cargo run --target wasm32-unknown-unknown`)
+  - requires [wasm-server-runner](https://github.com/jakobhellermann/wasm-server-runner): `cargo install wasm-server-runner`
 
 ![screenshot](screenshots/screenshot.png)
 
@@ -20,6 +19,8 @@ You should keep the `credits` directory up to date. The release workflow automat
 
 1. Replace `build/windows/icon.ico` (icon used for windows executable and as favicon for the web-builds)
 2. Replace `build/macos/icon_1024x1024.png` with a `1024` times `1024` pixel png icon and run `create_icns.sh` (make sure to run the script inside the `macos` directory) - _Warning: sadly this seems to require a mac..._
+
+You should keep the `credits` directory up to date. The release workflow automatically includes the directory in every build.
 
 ## Known issues
 
