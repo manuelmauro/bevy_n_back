@@ -8,13 +8,7 @@ use std::collections::VecDeque;
 
 pub mod cue;
 
-pub struct Score {
-    false_pos: usize,
-    true_pos: usize,
-    false_neg: usize,
-    true_neg: usize,
-}
-
+#[derive(Default)]
 pub struct Answer {
     w: bool,
     a: bool,
@@ -47,15 +41,12 @@ impl Answer {
     }
 }
 
-impl Default for Answer {
-    fn default() -> Self {
-        Answer {
-            w: false,
-            a: false,
-            s: false,
-            d: false,
-        }
-    }
+#[derive(Default)]
+pub struct Score {
+    false_pos: usize,
+    true_pos: usize,
+    false_neg: usize,
+    true_neg: usize,
 }
 
 impl Score {
@@ -93,17 +84,7 @@ impl Score {
     }
 }
 
-impl Default for Score {
-    fn default() -> Self {
-        Score {
-            false_pos: 0,
-            true_pos: 0,
-            false_neg: 0,
-            true_neg: 0,
-        }
-    }
-}
-
+#[derive(Default)]
 pub struct NBack {
     pub score: Score,
     pub answer: Answer,
@@ -131,14 +112,12 @@ impl NBack {
                 self.score.record_fp();
                 info!("false_positive");
             }
+        } else if self.cells.is_match() {
+            self.score.record_fn();
+            info!("false_neg");
         } else {
-            if self.cells.is_match() {
-                self.score.record_fn();
-                info!("false_neg");
-            } else {
-                self.score.record_tn();
-                info!("true_neg");
-            }
+            self.score.record_tn();
+            info!("true_neg");
         }
 
         if self.answer.d {
@@ -149,25 +128,12 @@ impl NBack {
                 self.score.record_fp();
                 info!("false_positive");
             }
+        } else if self.pigments.is_match() {
+            self.score.record_fn();
+            info!("false_neg");
         } else {
-            if self.pigments.is_match() {
-                self.score.record_fn();
-                info!("false_neg");
-            } else {
-                self.score.record_tn();
-                info!("true_neg");
-            }
-        }
-    }
-}
-
-impl Default for NBack {
-    fn default() -> Self {
-        NBack {
-            score: Default::default(),
-            answer: Default::default(),
-            cells: Default::default(),
-            pigments: Default::default(),
+            self.score.record_tn();
+            info!("true_neg");
         }
     }
 }
