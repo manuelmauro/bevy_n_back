@@ -9,6 +9,8 @@ An infinite run of Dual-n-Back on [Bevy engine][bevy].
 
 You should keep the `credits` directory up to date. The release workflow automatically includes the directory in every build.
 
+![screenshot](screenshots/screenshot.png)
+
 ## GitHub workflow
 
 - workflow for GitHub actions creating releases for Windows, Linux, macOS and Web (WASM) ready for distribution
