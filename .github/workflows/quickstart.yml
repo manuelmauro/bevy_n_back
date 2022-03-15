@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
       - uses: actions-rs/cargo@v1
         with:
-          command: check --features web
+          command: check --features native
       - uses: actions-rs/cargo@v1
 
   wasm-check:
@@ -52,7 +52,7 @@ jobs:
           toolchain: stable
           override: true
       - name: Install Dependencies
-        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev libxcb-shape0-dev libxcb-xfixes0-dev
       - uses: actions-rs/cargo@v1
         with:
           command: test
