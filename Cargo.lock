@@ -481,6 +481,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_n_back"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_egui",
+ "bevy_kira_audio",
+ "bevy_webgl2",
+ "embed-resource",
+ "rand",
+ "winit",
+]
+
+[[package]]
 name = "bevy_pbr"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1843,19 +1856,6 @@ name = "inflections"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a257582fdcde896fd96463bf2d40eefea0580021c0712a0e2b028b60b47a837a"
-
-[[package]]
-name = "infty_n_back"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_egui",
- "bevy_kira_audio",
- "bevy_webgl2",
- "embed-resource",
- "rand",
- "winit",
-]
 
 [[package]]
 name = "inotify"

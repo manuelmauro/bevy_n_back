@@ -9,7 +9,7 @@ use bevy::DefaultPlugins;
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 use bevy_kira_audio::{Audio, AudioPlugin};
-use infty_n_back::{
+use bevy_n_back::{
     constant::SPACING,
     nback::cue::{Cell, Pigment},
     nback::NBack,

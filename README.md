@@ -1,4 +1,4 @@
-# Infty-N-Back
+# Bevy-N-Back
 
 An infinite run of Dual-n-Back on [Bevy engine][bevy].
 

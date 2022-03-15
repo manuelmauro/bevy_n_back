@@ -6,8 +6,8 @@ on:
 name: release-flow
 
 env:
-  GAME_EXECUTABLE_NAME: infty_n_back
-  GAME_OSX_APP_NAME: InftyNBack
+  GAME_EXECUTABLE_NAME: bevy_n_back
+  GAME_OSX_APP_NAME: BevyNBack
 
 jobs:
   build-macOS:

@@ -5,9 +5,9 @@
         <key>CFBundleDevelopmentRegion</key>
         <string>en</string>
         <key>CFBundleDisplayName</key>
-        <string>InftyNBack</string> <!-- this should be the same as your OSX app name in the release flow -->
+        <string>BevyNBack</string> <!-- this should be the same as your OSX app name in the release flow -->
         <key>CFBundleExecutable</key>
-        <string>infty_n_back</string> <!-- this should be the same as your executable name in the release flow -->
+        <string>bevy_n_back</string> <!-- this should be the same as your executable name in the release flow -->
         <key>CFBundleIconFile</key>
         <string>AppIcon.icns</string>
         <key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
         <key>CFBundleName</key>
-        <string>Infty N Back</string>
+        <string>Bevy N Back</string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleShortVersionString</key>
