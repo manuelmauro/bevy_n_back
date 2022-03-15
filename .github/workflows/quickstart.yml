@@ -39,7 +39,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --target wasm32-unknown-unknown
+          args: --features web --target wasm32-unknown-unknown
 
   tests:
     name: Tests
