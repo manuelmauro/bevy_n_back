@@ -12,7 +12,7 @@ use bevy_n_back::{
     nback::NBack,
 };
 
-struct CellMaterials {
+struct CellColors {
     one: Color,
     two: Color,
     three: Color,
@@ -21,7 +21,7 @@ struct CellMaterials {
     six: Color,
 }
 
-impl CellMaterials {
+impl CellColors {
     fn from(&self, pigment: Pigment) -> Color {
         match pigment {
             Pigment::A => self.one,
@@ -34,9 +34,9 @@ impl CellMaterials {
     }
 }
 
-impl FromWorld for CellMaterials {
+impl FromWorld for CellColors {
     fn from_world(_world: &mut World) -> Self {
-        CellMaterials {
+        CellColors {
             one: Color::rgb(1.0, 0.56, 0.0),
             two: Color::rgb(0.60, 0.05, 1.0),
             three: Color::rgb(1.0, 0.0, 0.65),
@@ -56,7 +56,7 @@ fn main() {
     let mut app = App::new();
 
     app.insert_resource(WindowDescriptor {
-        title: "nback!".to_string(),
+        title: "bevy_n_back".to_string(),
         width: 360.,
         height: 640.,
         mode: WindowMode::Windowed,
@@ -65,7 +65,7 @@ fn main() {
     .add_plugins(DefaultPlugins)
     .add_plugin(EguiPlugin)
     .add_plugin(AudioPlugin)
-    .init_resource::<CellMaterials>()
+    .init_resource::<CellColors>()
     .insert_resource(NBack::default())
     .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
     .add_startup_system(setup)
@@ -80,12 +80,11 @@ fn main() {
 
 fn setup(
     mut commands: Commands,
-    cell_materials: Res<CellMaterials>,
+    cell_colors: Res<CellColors>,
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
 ) {
-    // Add the game's entities to our world
-
+    // Add game's entities to our world
     // audio
     audio.play_looped(asset_server.load("sounds/Cyberpunk-Moonlight-Sonata.flac"));
 
@@ -97,7 +96,6 @@ fn setup(
     let wall_material = Color::rgb(0.85, 0.85, 0.85);
     let wall_thickness = 8.0;
     let bounds = Vec2::new(240.0, 240.0);
-
     // left
     commands.spawn_bundle(SpriteBundle {
         transform: Transform::from_xyz(-bounds.x / 2.0, 0.0, 0.0),
@@ -141,7 +139,7 @@ fn setup(
 
     // Add cell
     let cell = Cell::None;
-    let cell_material = cell_materials.one;
+    let cell_material = cell_colors.one;
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -171,7 +169,7 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
 
 fn cue_system(
     mut game: ResMut<NBack>,
-    cell_materials: Res<CellMaterials>,
+    cell_colors: Res<CellColors>,
     mut board_query: Query<(&Cell, &mut Transform, &mut Sprite, &Timer)>,
 ) {
     if let Ok((_, mut transform, mut sprite, timer)) = board_query.get_single_mut() {
@@ -179,7 +177,7 @@ fn cue_system(
             if let Some((new_cell, new_pigment)) = game.next() {
                 info!("cue: {:?}", new_cell);
                 transform.translation = (&new_cell).into();
-                sprite.color = cell_materials.from(new_pigment);
+                sprite.color = cell_colors.from(new_pigment);
             }
         }
     }
