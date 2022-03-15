@@ -93,14 +93,14 @@ fn setup(
     commands.spawn_bundle(UiCameraBundle::default());
 
     // Add walls
-    let wall_material = Color::rgb(0.85, 0.85, 0.85);
+    let wall_color = Color::rgb(0.85, 0.85, 0.85);
     let wall_thickness = 8.0;
     let bounds = Vec2::new(240.0, 240.0);
     // left
     commands.spawn_bundle(SpriteBundle {
         transform: Transform::from_xyz(-bounds.x / 2.0, 0.0, 0.0),
         sprite: Sprite {
-            color: wall_material,
+            color: wall_color,
             custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
             ..Default::default()
         },
@@ -110,7 +110,7 @@ fn setup(
     commands.spawn_bundle(SpriteBundle {
         transform: Transform::from_xyz(bounds.x / 2.0, 0.0, 0.0),
         sprite: Sprite {
-            color: wall_material,
+            color: wall_color,
             custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
             ..Default::default()
         },
@@ -120,7 +120,7 @@ fn setup(
     commands.spawn_bundle(SpriteBundle {
         transform: Transform::from_xyz(0.0, -bounds.y / 2.0, 0.0),
         sprite: Sprite {
-            color: wall_material,
+            color: wall_color,
             custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
             ..Default::default()
         },
@@ -130,7 +130,7 @@ fn setup(
     commands.spawn_bundle(SpriteBundle {
         transform: Transform::from_xyz(0.0, bounds.y / 2.0, 0.0),
         sprite: Sprite {
-            color: wall_material,
+            color: wall_color,
             custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
             ..Default::default()
         },
@@ -139,11 +139,11 @@ fn setup(
 
     // Add cell
     let cell = Cell::None;
-    let cell_material = cell_colors.one;
+    let cell_color = cell_colors.one;
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                color: cell_material,
+                color: cell_color,
                 custom_size: Some(Vec2::new(
                     (bounds.x - SPACING) / 3.0,
                     (bounds.x - SPACING) / 3.0,
