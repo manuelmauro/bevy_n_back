@@ -1,9 +1,9 @@
-name: release-flow
-
 on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+*"
+
+name: release-flow
 
 env:
   GAME_EXECUTABLE_NAME: infty_n_back
