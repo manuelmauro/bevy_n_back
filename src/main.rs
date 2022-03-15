@@ -12,41 +12,6 @@ use bevy_n_back::{
     nback::NBack,
 };
 
-struct CellColors {
-    one: Color,
-    two: Color,
-    three: Color,
-    four: Color,
-    five: Color,
-    six: Color,
-}
-
-impl CellColors {
-    fn from(&self, pigment: Pigment) -> Color {
-        match pigment {
-            Pigment::A => self.one,
-            Pigment::B => self.two,
-            Pigment::C => self.three,
-            Pigment::D => self.four,
-            Pigment::E => self.five,
-            Pigment::None => self.six,
-        }
-    }
-}
-
-impl FromWorld for CellColors {
-    fn from_world(_world: &mut World) -> Self {
-        CellColors {
-            one: Color::rgb(1.0, 0.56, 0.0),
-            two: Color::rgb(0.60, 0.05, 1.0),
-            three: Color::rgb(1.0, 0.0, 0.65),
-            four: Color::rgb(0.12, 1.0, 0.14),
-            five: Color::rgb(0.12, 0.80, 1.0),
-            six: Color::rgb(0.0, 0.0, 0.0),
-        }
-    }
-}
-
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
 enum Label {
     ScoreCheck,
@@ -65,7 +30,6 @@ fn main() {
     .add_plugins(DefaultPlugins)
     .add_plugin(EguiPlugin)
     .add_plugin(AudioPlugin)
-    .init_resource::<CellColors>()
     .insert_resource(NBack::default())
     .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
     .add_startup_system(setup)
@@ -78,12 +42,7 @@ fn main() {
     app.run();
 }
 
-fn setup(
-    mut commands: Commands,
-    cell_colors: Res<CellColors>,
-    asset_server: Res<AssetServer>,
-    audio: Res<Audio>,
-) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
     // Add game's entities to our world
     // audio
     audio.play_looped(asset_server.load("sounds/Cyberpunk-Moonlight-Sonata.flac"));
@@ -139,11 +98,10 @@ fn setup(
 
     // Add cell
     let cell = Cell::None;
-    let cell_color = cell_colors.one;
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                color: cell_color,
+                color: (&Pigment::A).into(),
                 custom_size: Some(Vec2::new(
                     (bounds.x - SPACING) / 3.0,
                     (bounds.x - SPACING) / 3.0,
@@ -157,8 +115,8 @@ fn setup(
         .insert(Timer::from_seconds(2.0, true));
 }
 
-/// This system ticks all the `Timer` components on entities within the scene
-/// using bevy's `Time` resource to get the delta between each update.
+/// Tick all the `Timer` components on entities within the scene using bevy's
+/// `Time` resource to get the delta between each update.
 fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
     for mut timer in query.iter_mut() {
         if timer.tick(time.delta()).just_finished() {
@@ -167,9 +125,9 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
     }
 }
 
+/// Render cues.
 fn cue_system(
     mut game: ResMut<NBack>,
-    cell_colors: Res<CellColors>,
     mut board_query: Query<(&Cell, &mut Transform, &mut Sprite, &Timer)>,
 ) {
     if let Ok((_, mut transform, mut sprite, timer)) = board_query.get_single_mut() {
@@ -177,12 +135,13 @@ fn cue_system(
             if let Some((new_cell, new_pigment)) = game.next() {
                 info!("cue: {:?}", new_cell);
                 transform.translation = (&new_cell).into();
-                sprite.color = cell_colors.from(new_pigment);
+                sprite.color = (&new_pigment).into();
             }
         }
     }
 }
 
+/// Record answers.
 fn answer_system(
     mut game: ResMut<NBack>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -209,6 +168,7 @@ fn answer_system(
     }
 }
 
+/// Check answers.
 fn score_system(mut game: ResMut<NBack>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.get_single_mut() {
         if timer.just_finished() {
@@ -217,9 +177,7 @@ fn score_system(mut game: ResMut<NBack>, mut query: Query<&Timer>) {
     }
 }
 
-// Note the usage of `ResMut`. Even though `ctx` method doesn't require
-// mutability, accessing the context from different threads will result
-// into panic if you don't enable `egui/multi_threaded` feature.
+/// User interface.
 fn debug_ui(mut egui_context: ResMut<EguiContext>, mut game: ResMut<NBack>) {
     egui::Window::new("debug")
         .resizable(false)

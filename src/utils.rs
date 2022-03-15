@@ -1,5 +1,5 @@
 use crate::constant::{SIZE, SPACING};
-use crate::nback::cue::Cell;
+use crate::nback::cue::{Cell, Pigment};
 use bevy::prelude::*;
 
 impl From<&Cell> for Vec3 {
@@ -39,5 +39,18 @@ fn column(cell: &Cell) -> f32 {
         Cell::BottomCenter => 0.0,
         Cell::BottomRight => 1.0,
         Cell::None => 0.0,
+    }
+}
+
+impl From<&Pigment> for Color {
+    fn from(pigment: &Pigment) -> Self {
+        match pigment {
+            Pigment::A => Color::rgb(1.0, 0.56, 0.0),
+            Pigment::B => Color::rgb(0.60, 0.05, 1.0),
+            Pigment::C => Color::rgb(1.0, 0.0, 0.65),
+            Pigment::D => Color::rgb(0.12, 1.0, 0.14),
+            Pigment::E => Color::rgb(0.12, 0.80, 1.0),
+            Pigment::None => Color::rgb(0.0, 0.0, 0.0),
+        }
     }
 }
