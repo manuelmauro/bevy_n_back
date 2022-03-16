@@ -6,38 +6,34 @@ use rand::{
 };
 use std::collections::VecDeque;
 
+use self::cue::Letter;
+
 pub mod cue;
 
 #[derive(Default)]
 pub struct Answer {
-    w: bool,
-    a: bool,
-    s: bool,
-    d: bool,
+    same_cell: bool,
+    same_pigment: bool,
+    same_letter: bool,
 }
 
 impl Answer {
-    pub fn w(&mut self) {
-        self.w = true;
+    pub fn same_cell(&mut self) {
+        self.same_cell = true;
     }
 
-    pub fn a(&mut self) {
-        self.a = true;
+    pub fn same_pigment(&mut self) {
+        self.same_pigment = true;
     }
 
-    pub fn s(&mut self) {
-        self.s = true;
-    }
-
-    pub fn d(&mut self) {
-        self.d = true;
+    pub fn same_letter(&mut self) {
+        self.same_letter = true;
     }
 
     pub fn reset(&mut self) {
-        self.w = false;
-        self.a = false;
-        self.s = false;
-        self.d = false;
+        self.same_cell = false;
+        self.same_pigment = false;
+        self.same_letter = false;
     }
 }
 
@@ -90,6 +86,7 @@ pub struct NBack {
     pub answer: Answer,
     pub cells: CueChain<Cell>,
     pub pigments: CueChain<Pigment>,
+    pub letters: CueChain<Letter>,
 }
 
 impl NBack {
@@ -104,7 +101,8 @@ impl NBack {
     }
 
     pub fn check_answer(&mut self) {
-        if self.answer.a {
+        // check cell
+        if self.answer.same_cell {
             if self.cells.is_match() {
                 self.score.record_tp();
                 info!("true_positive");
@@ -120,7 +118,8 @@ impl NBack {
             info!("true_neg");
         }
 
-        if self.answer.d {
+        // check pigment
+        if self.answer.same_pigment {
             if self.pigments.is_match() {
                 self.score.record_tp();
                 info!("true_positive");
@@ -129,6 +128,23 @@ impl NBack {
                 info!("false_positive");
             }
         } else if self.pigments.is_match() {
+            self.score.record_fn();
+            info!("false_neg");
+        } else {
+            self.score.record_tn();
+            info!("true_neg");
+        }
+
+        // check letter
+        if self.answer.same_letter {
+            if self.letters.is_match() {
+                self.score.record_tp();
+                info!("true_positive");
+            } else {
+                self.score.record_fp();
+                info!("false_positive");
+            }
+        } else if self.letters.is_match() {
             self.score.record_fn();
             info!("false_neg");
         } else {

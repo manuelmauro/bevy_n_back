@@ -67,3 +67,37 @@ impl Distribution<Pigment> for Standard {
         }
     }
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Letter {
+    C,
+    H,
+    K,
+    L,
+    Q,
+    R,
+    S,
+    T,
+    None,
+}
+
+impl Default for Letter {
+    fn default() -> Self {
+        Letter::None
+    }
+}
+
+impl Distribution<Letter> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Letter {
+        match rng.gen_range(0..=7) {
+            0 => Letter::C,
+            1 => Letter::H,
+            2 => Letter::K,
+            3 => Letter::L,
+            4 => Letter::Q,
+            5 => Letter::R,
+            6 => Letter::S,
+            _ => Letter::T,
+        }
+    }
+}

@@ -120,7 +120,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
 fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
     for mut timer in query.iter_mut() {
         if timer.tick(time.delta()).just_finished() {
-            info!("tick!")
+            info!("timer_system::tick!")
         }
     }
 }
@@ -133,7 +133,7 @@ fn cue_system(
     if let Ok((_, mut transform, mut sprite, timer)) = board_query.get_single_mut() {
         if timer.just_finished() {
             if let Some((new_cell, new_pigment)) = game.next() {
-                info!("cue: {:?}", new_cell);
+                info!("cue_system::(Cell::{:?}, Pigment::{:?})", new_cell, new_pigment);
                 transform.translation = (&new_cell).into();
                 sprite.color = (&new_pigment).into();
             }
@@ -147,23 +147,20 @@ fn answer_system(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&Timer>,
 ) {
-    if keyboard_input.pressed(KeyCode::W) {
-        game.answer.w();
-    }
     if keyboard_input.pressed(KeyCode::A) {
-        game.answer.a();
+        game.answer.same_cell();
     }
     if keyboard_input.pressed(KeyCode::S) {
-        game.answer.s();
+        game.answer.same_pigment();
     }
     if keyboard_input.pressed(KeyCode::D) {
-        game.answer.d();
+        game.answer.same_letter();
     }
 
     if let Ok(timer) = query.get_single_mut() {
         if timer.just_finished() {
             game.answer.reset();
-            info!("reset answer");
+            info!("answer_system::reset answer");
         }
     }
 }
@@ -173,6 +170,7 @@ fn score_system(mut game: ResMut<NBack>, mut query: Query<&Timer>) {
     if let Ok(timer) = query.get_single_mut() {
         if timer.just_finished() {
             game.check_answer();
+            info!("score_system::checked!")
         }
     }
 }
