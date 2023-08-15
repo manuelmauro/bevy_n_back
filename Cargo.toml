@@ -24,18 +24,16 @@ default = [
   "bevy_kira_audio/flac",
 ]
 
-dev = [
-  "bevy/dynamic",
-]
+dev = ["bevy/dynamic"]
 
 [dependencies]
-bevy = {version = "0.6.1", default-features = false}
-bevy_egui = "0.12.1"
-bevy_kira_audio = "0.8.0"
+bevy = { version = "0.7.0", default-features = false }
+bevy_egui = "0.14.0"
+bevy_kira_audio = "0.10.0"
 rand = "0.8.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-winit = {version = "0.25", features = ["x11"]}
+winit = { version = "0.25", features = ["x11"] }
 
 [build-dependencies]
 embed-resource = "1.4"

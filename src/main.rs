@@ -17,6 +17,9 @@ enum Label {
     ScoreCheck,
 }
 
+#[derive(Component, Deref, DerefMut)]
+struct CellTimer(Timer);
+
 fn main() {
     let mut app = App::new();
 
@@ -112,12 +115,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
             ..Default::default()
         })
         .insert(cell)
-        .insert(Timer::from_seconds(2.0, true));
+        .insert(CellTimer(Timer::from_seconds(2.0, true)));
 }
 
 /// Tick all the `Timer` components on entities within the scene using bevy's
 /// `Time` resource to get the delta between each update.
-fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
+fn timer_system(time: Res<Time>, mut query: Query<&mut CellTimer>) {
     for mut timer in query.iter_mut() {
         if timer.tick(time.delta()).just_finished() {
             info!("tick!")
@@ -128,7 +131,7 @@ fn timer_system(time: Res<Time>, mut query: Query<&mut Timer>) {
 /// Render cues.
 fn cue_system(
     mut game: ResMut<NBack>,
-    mut board_query: Query<(&Cell, &mut Transform, &mut Sprite, &Timer)>,
+    mut board_query: Query<(&Cell, &mut Transform, &mut Sprite, &CellTimer)>,
 ) {
     if let Ok((_, mut transform, mut sprite, timer)) = board_query.get_single_mut() {
         if timer.just_finished() {
@@ -145,7 +148,7 @@ fn cue_system(
 fn answer_system(
     mut game: ResMut<NBack>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&Timer>,
+    mut query: Query<&CellTimer>,
 ) {
     if keyboard_input.pressed(KeyCode::W) {
         game.answer.w();
@@ -169,7 +172,7 @@ fn answer_system(
 }
 
 /// Check answers.
-fn score_system(mut game: ResMut<NBack>, mut query: Query<&Timer>) {
+fn score_system(mut game: ResMut<NBack>, mut query: Query<&CellTimer>) {
     if let Ok(timer) = query.get_single_mut() {
         if timer.just_finished() {
             game.check_answer();
