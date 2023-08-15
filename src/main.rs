@@ -1,11 +1,10 @@
 // disable console on windows for release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use bevy::prelude::{App, ClearColor, Color, WindowDescriptor};
-use bevy::DefaultPlugins;
-use bevy::{prelude::*, window::WindowMode};
+use bevy::prelude::*;
+use bevy::window::WindowMode;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
-use bevy_kira_audio::{Audio, AudioPlugin};
+use bevy_kira_audio::prelude::*;
 use bevy_n_back::{
     constant::SPACING,
     nback::cue::{Cell, Pigment},
@@ -48,11 +47,12 @@ fn main() {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
     // Add game's entities to our world
     // audio
-    audio.play_looped(asset_server.load("sounds/Cyberpunk-Moonlight-Sonata.flac"));
+    audio
+        .play(asset_server.load("sounds/Cyberpunk-Moonlight-Sonata.ogg"))
+        .looped();
 
     // cameras
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn_bundle(Camera2dBundle::default());
 
     // Add walls
     let wall_color = Color::rgb(0.85, 0.85, 0.85);
