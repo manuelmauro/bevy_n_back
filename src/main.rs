@@ -22,14 +22,16 @@ struct CellTimer(Timer);
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(WindowDescriptor {
-        title: "bevy_n_back".to_string(),
-        width: 360.,
-        height: 640.,
-        mode: WindowMode::Windowed,
-        ..Default::default()
-    })
-    .add_plugins(DefaultPlugins)
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        window: WindowDescriptor {
+            title: "bevy_n_back".to_string(),
+            width: 360.,
+            height: 640.,
+            mode: WindowMode::Windowed,
+            ..default()
+        },
+        ..default()
+    }))
     .add_plugin(EguiPlugin)
     .add_plugin(AudioPlugin)
     .insert_resource(NBack::default())
@@ -52,14 +54,14 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
         .looped();
 
     // cameras
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 
     // Add walls
     let wall_color = Color::rgb(0.85, 0.85, 0.85);
     let wall_thickness = 8.0;
     let bounds = Vec2::new(240.0, 240.0);
     // left
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         transform: Transform::from_xyz(-bounds.x / 2.0, 0.0, 0.0),
         sprite: Sprite {
             color: wall_color,
@@ -69,7 +71,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
         ..Default::default()
     });
     // right
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         transform: Transform::from_xyz(bounds.x / 2.0, 0.0, 0.0),
         sprite: Sprite {
             color: wall_color,
@@ -79,7 +81,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
         ..Default::default()
     });
     // bottom
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         transform: Transform::from_xyz(0.0, -bounds.y / 2.0, 0.0),
         sprite: Sprite {
             color: wall_color,
@@ -89,7 +91,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
         ..Default::default()
     });
     // top
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         transform: Transform::from_xyz(0.0, bounds.y / 2.0, 0.0),
         sprite: Sprite {
             color: wall_color,
@@ -102,7 +104,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
     // Add cell
     let cell = Cell::None;
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             sprite: Sprite {
                 color: (&Pigment::A).into(),
                 custom_size: Some(Vec2::new(
@@ -115,7 +117,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
             ..Default::default()
         })
         .insert(cell)
-        .insert(CellTimer(Timer::from_seconds(2.0, true)));
+        .insert(CellTimer(Timer::from_seconds(2.0, TimerMode::Repeating)));
 }
 
 /// Tick all the `Timer` components on entities within the scene using bevy's

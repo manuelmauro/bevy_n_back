@@ -1,4 +1,4 @@
-use bevy::prelude::info;
+use bevy::prelude::{info, Resource};
 use cue::{Cell, Pigment};
 use rand::{
     distributions::{Distribution, Standard},
@@ -84,7 +84,7 @@ impl Score {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct NBack {
     pub score: Score,
     pub answer: Answer,
