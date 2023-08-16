@@ -16,24 +16,39 @@ lto = true
 codegen-units = 1
 
 [features]
-default = [
-  "bevy/bevy_winit",
-  "bevy/render",
-  "bevy/png",
-  "bevy/x11",
-  "bevy_kira_audio/flac",
-]
-
-dev = ["bevy/dynamic"]
+dev = ["bevy/bevy_dylib"]
 
 [dependencies]
-bevy = { version = "0.9.1", default-features = false }
-bevy_egui = "0.19.0"
-bevy_kira_audio = "0.14.0"
+bevy = { version = "0.10.1", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "png",
+    "hdr",
+    "ktx2",
+    "zstd",
+    "vorbis",
+    "x11",
+    "filesystem_watcher",
+    "android_shared_stdcxx",
+    "tonemapping_luts",
+] }
+bevy_egui = "0.20.0"
+bevy_kira_audio = "0.15.0"
 rand = "0.8.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-winit = { version = "0.27.4", features = ["x11"] }
+winit = { version = "0.28.0", features = ["x11"] }
 
 [build-dependencies]
 embed-resource = "1.4"

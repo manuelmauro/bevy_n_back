@@ -2,17 +2,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
-use bevy::window::WindowMode;
-use bevy_egui::{egui, EguiContext, EguiPlugin};
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_kira_audio::prelude::*;
+use bevy_kira_audio::Audio;
 use bevy_n_back::{
     constant::SPACING,
     nback::cue::{Cell, Pigment},
     nback::NBack,
 };
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
-enum Label {
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+enum Set {
     ScoreCheck,
 }
 
@@ -23,13 +23,10 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        window: WindowDescriptor {
-            title: "bevy_n_back".to_string(),
-            width: 360.,
-            height: 640.,
-            mode: WindowMode::Windowed,
+        primary_window: Some(Window {
+            window_level: bevy::window::WindowLevel::AlwaysOnTop,
             ..default()
-        },
+        }),
         ..default()
     }))
     .add_plugin(EguiPlugin)
@@ -38,9 +35,9 @@ fn main() {
     .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
     .add_startup_system(setup)
     .add_system(timer_system)
-    .add_system(score_system.label(Label::ScoreCheck))
-    .add_system(cue_system.after(Label::ScoreCheck))
-    .add_system(answer_system.after(Label::ScoreCheck))
+    .add_system(score_system.in_set(Set::ScoreCheck))
+    .add_system(cue_system.after(Set::ScoreCheck))
+    .add_system(answer_system.after(Set::ScoreCheck))
     .add_system(debug_ui);
 
     app.run();
@@ -183,7 +180,7 @@ fn score_system(mut game: ResMut<NBack>, mut query: Query<&CellTimer>) {
 }
 
 /// User interface.
-fn debug_ui(mut egui_context: ResMut<EguiContext>, mut game: ResMut<NBack>) {
+fn debug_ui(mut egui_context: EguiContexts, mut game: ResMut<NBack>) {
     egui::Window::new("debug")
         .resizable(false)
         .show(egui_context.ctx_mut(), |ui| {
