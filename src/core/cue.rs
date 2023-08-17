@@ -4,7 +4,7 @@ use rand::{
     Rng,
 };
 
-#[derive(Clone, Component, Debug, PartialEq)]
+#[derive(Clone, Component, Debug, Default, PartialEq)]
 pub enum Cell {
     TopLeft,
     TopCenter,

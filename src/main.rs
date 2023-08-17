@@ -1,7 +1,10 @@
 // disable console on windows for release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use bevy::prelude::*;
+use bevy::{
+    core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping},
+    prelude::*,
+};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_kira_audio::prelude::*;
 use bevy_kira_audio::Audio;
@@ -24,10 +27,10 @@ fn main() {
         }),
         ..default()
     }))
+    .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
     .add_plugins(EguiPlugin)
     .add_plugins(AudioPlugin)
     .insert_resource(NBack::default())
-    .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
     .add_systems(Startup, setup)
     .add_systems(
         Update,
@@ -37,9 +40,8 @@ fn main() {
             cue_system.after(answer_system),
             debug_ui,
         ),
-    );
-
-    app.run();
+    )
+    .run();
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
@@ -50,10 +52,26 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audi
         .looped();
 
     // cameras
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn((
+        Camera2dBundle {
+            camera: Camera {
+                hdr: true,
+                ..default()
+            },
+            tonemapping: Tonemapping::TonyMcMapface,
+            ..default()
+        },
+        BloomSettings {
+            intensity: 0.5,
+            low_frequency_boost: 1.0,
+            high_pass_frequency: 0.5,
+            low_frequency_boost_curvature: 1.0,
+            ..default()
+        },
+    ));
 
     // Add walls
-    let wall_color = Color::rgb(0.85, 0.85, 0.85);
+    let wall_color = Color::rgb(1.0, 1.0, 1.0);
     let wall_thickness = 8.0;
     let bounds = Vec2::new(240.0, 240.0);
     // left
@@ -171,7 +189,31 @@ fn answer_system(
 }
 
 /// User interface.
-fn debug_ui(mut egui_context: EguiContexts, mut game: ResMut<NBack>) {
+fn debug_ui(
+    mut camera: Query<(Entity, Option<&mut BloomSettings>), With<Camera>>,
+    mut egui_context: EguiContexts,
+    mut game: ResMut<NBack>,
+) {
+    let mut bloom_settings = camera.single_mut().1.unwrap();
+
+    egui::Window::new("bloom")
+        .resizable(false)
+        .show(egui_context.ctx_mut(), |ui| {
+            ui.add(egui::Slider::new(&mut bloom_settings.intensity, 0.0..=1.0).text("intensity"));
+            ui.add(
+                egui::Slider::new(&mut bloom_settings.low_frequency_boost, 0.0..=1.0)
+                    .text("low_frequency_boost"),
+            );
+            ui.add(
+                egui::Slider::new(&mut bloom_settings.high_pass_frequency, 0.0..=1.0)
+                    .text("high_pass_frequency"),
+            );
+            ui.add(
+                egui::Slider::new(&mut bloom_settings.low_frequency_boost_curvature, 0.0..=1.0)
+                    .text("low_frequency_boost_curvature"),
+            );
+        });
+
     egui::Window::new("debug")
         .resizable(false)
         .show(egui_context.ctx_mut(), |ui| {
