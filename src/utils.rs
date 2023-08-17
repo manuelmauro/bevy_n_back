@@ -1,4 +1,4 @@
-use crate::nback::cue::{Cell, Pigment};
+use crate::core::cue::{Cell, Pigment};
 use bevy::prelude::*;
 
 pub const SIZE: f32 = 60.0;
