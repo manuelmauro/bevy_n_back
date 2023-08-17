@@ -29,16 +29,15 @@ fn main() {
     .insert_resource(NBack::default())
     .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
     .add_systems(Startup, setup)
-    .add_systems(Update, timer_system)
     .add_systems(
         Update,
         (
-            score_system,
-            cue_system.after(score_system),
-            answer_system.after(score_system),
+            timer_system,
+            answer_system,
+            cue_system.after(answer_system),
+            debug_ui,
         ),
-    )
-    .add_systems(Update, debug_ui);
+    );
 
     app.run();
 }
@@ -164,17 +163,9 @@ fn answer_system(
 
     if let Ok(timer) = query.get_single_mut() {
         if timer.just_finished() {
+            game.check_answer();
             game.answer.reset();
             info!("reset answer");
-        }
-    }
-}
-
-/// Check answers.
-fn score_system(mut game: ResMut<NBack>, mut query: Query<&CellTimer>) {
-    if let Ok(timer) = query.get_single_mut() {
-        if timer.just_finished() {
-            game.check_answer();
         }
     }
 }
@@ -188,6 +179,7 @@ fn debug_ui(mut egui_context: EguiContexts, mut game: ResMut<NBack>) {
             ui.label(format!("correct: {}", game.score.correct()));
             ui.label(format!("wrong: {}", game.score.wrong()));
             ui.label(format!("F1 score: {}", game.score.f1_score()));
+            ui.label(format!("{:?}", game.answer));
 
             if ui.button("Restart").clicked() {
                 game.restart()

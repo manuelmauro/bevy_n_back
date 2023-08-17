@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 
 pub mod cue;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Answer {
     w: bool,
     a: bool,
