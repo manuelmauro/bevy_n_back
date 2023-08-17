@@ -15,13 +15,8 @@ pub enum Cell {
     BottomLeft,
     BottomCenter,
     BottomRight,
+    #[default]
     None,
-}
-
-impl Default for Cell {
-    fn default() -> Self {
-        Cell::None
-    }
 }
 
 impl Distribution<Cell> for Standard {
@@ -40,20 +35,15 @@ impl Distribution<Cell> for Standard {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum Pigment {
     A,
     B,
     C,
     D,
     E,
+    #[default]
     None,
-}
-
-impl Default for Pigment {
-    fn default() -> Self {
-        Pigment::None
-    }
 }
 
 impl Distribution<Pigment> for Standard {
