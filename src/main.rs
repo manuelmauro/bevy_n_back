@@ -11,11 +11,6 @@ use bevy_n_back::{
     nback::NBack,
 };
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-enum Set {
-    ScoreCheck,
-}
-
 #[derive(Component, Deref, DerefMut)]
 struct CellTimer(Timer);
 
@@ -29,16 +24,21 @@ fn main() {
         }),
         ..default()
     }))
-    .add_plugin(EguiPlugin)
-    .add_plugin(AudioPlugin)
+    .add_plugins(EguiPlugin)
+    .add_plugins(AudioPlugin)
     .insert_resource(NBack::default())
     .insert_resource(ClearColor(Color::rgb(0.15, 0.15, 0.15)))
-    .add_startup_system(setup)
-    .add_system(timer_system)
-    .add_system(score_system.in_set(Set::ScoreCheck))
-    .add_system(cue_system.after(Set::ScoreCheck))
-    .add_system(answer_system.after(Set::ScoreCheck))
-    .add_system(debug_ui);
+    .add_systems(Startup, setup)
+    .add_systems(Update, timer_system)
+    .add_systems(
+        Update,
+        (
+            score_system,
+            cue_system.after(score_system),
+            answer_system.after(score_system),
+        ),
+    )
+    .add_systems(Update, debug_ui);
 
     app.run();
 }
