@@ -6,9 +6,9 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_kira_audio::prelude::*;
 use bevy_kira_audio::Audio;
 use bevy_n_back::{
-    constant::SPACING,
     nback::cue::{Cell, Pigment},
     nback::NBack,
+    utils::SPACING,
 };
 
 #[derive(Component, Deref, DerefMut)]
