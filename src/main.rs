@@ -1,11 +1,14 @@
 use bevy::{
     core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping},
     prelude::*,
+    window::WindowMode,
 };
 use bevy_n_back::{
     game::GamePlugin,
-    menu::MenuPlugin,
-    setting::{DisplayQuality, Volume},
+    menu::{
+        setting::{DisplayQuality, Volume},
+        MenuPlugin,
+    },
     splash::SplashPlugin,
     GameState,
 };
@@ -14,6 +17,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
+                mode: WindowMode::BorderlessFullscreen,
                 window_level: bevy::window::WindowLevel::AlwaysOnTop,
                 ..default()
             }),
