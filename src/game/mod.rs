@@ -2,11 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use crate::{
+    despawn_screen,
+    game::core::cue::SPACING,
     game::core::cue::{Cell, Pigment},
     game::core::NBack,
     menu::MenuState,
-    utils::despawn_screen,
-    utils::SPACING,
     GameState,
 };
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
