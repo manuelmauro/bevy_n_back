@@ -30,7 +30,7 @@ impl Plugin for GamePlugin {
             .add_plugins(EguiPlugin)
             .add_plugins(AudioPlugin)
             .insert_resource(NBack::default())
-            .add_systems(OnEnter(GameState::Game), game_setup)
+            .add_systems(OnEnter(GameState::Game), setup)
             .add_systems(
                 Update,
                 (
@@ -46,7 +46,7 @@ impl Plugin for GamePlugin {
     }
 }
 
-fn game_setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
     // Add game's entities to our world
     // audio
     audio
@@ -188,6 +188,7 @@ fn answer_system(
 
 /// Exit game.
 fn exit_game_system(
+    mut game: ResMut<NBack>,
     keyboard_input: Res<Input<KeyCode>>,
     mut menu_state: ResMut<NextState<MenuState>>,
     mut game_state: ResMut<NextState<GameState>>,
@@ -197,6 +198,7 @@ fn exit_game_system(
         game_state.set(GameState::Menu);
         menu_state.set(MenuState::Main);
         audio.stop();
+        game.restart();
     }
 }
 
