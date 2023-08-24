@@ -1,9 +1,9 @@
-use crate::{
-    despawn_screen, menu::setting::DisplayQuality, menu::setting::Volume, GameState, TEXT_COLOR,
-};
+use crate::{despawn_screen, menu::setting::DisplayQuality, menu::setting::Volume, GameState};
 use bevy::{app::AppExit, prelude::*};
 
 pub mod setting;
+
+const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
 pub struct MenuPlugin;
 
