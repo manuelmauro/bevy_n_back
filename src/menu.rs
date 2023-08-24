@@ -1,4 +1,6 @@
-use super::{despawn_screen, DisplayQuality, GameState, Volume, TEXT_COLOR};
+use crate::{
+    setting::DisplayQuality, setting::Volume, utils::despawn_screen, GameState, TEXT_COLOR,
+};
 use bevy::{app::AppExit, prelude::*};
 
 pub struct MenuPlugin;

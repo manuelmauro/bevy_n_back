@@ -2,22 +2,13 @@ use bevy::{
     core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping},
     prelude::*,
 };
-use setting::{DisplayQuality, Volume};
-
-pub mod game;
-pub mod menu;
-pub mod setting;
-pub mod splash;
-
-const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
-
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum GameState {
-    #[default]
-    Splash,
-    Menu,
-    Game,
-}
+use bevy_n_back::{
+    game::GamePlugin,
+    menu::MenuPlugin,
+    setting::{DisplayQuality, Volume},
+    splash::SplashPlugin,
+    GameState,
+};
 
 fn main() {
     App::new()
@@ -34,7 +25,7 @@ fn main() {
         .add_state::<GameState>()
         .add_systems(Startup, setup)
         // Adds the plugins for each state
-        .add_plugins((splash::SplashPlugin, menu::MenuPlugin, game::GamePlugin))
+        .add_plugins((SplashPlugin, MenuPlugin, GamePlugin))
         .run();
 }
 
@@ -56,11 +47,4 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
-}
-
-/// Generic system that takes a component as a parameter, and will despawn all entities with that component
-fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
-    for entity in &to_despawn {
-        commands.entity(entity).despawn_recursive();
-    }
 }

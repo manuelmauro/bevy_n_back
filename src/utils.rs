@@ -1,4 +1,4 @@
-use crate::core::cue::{Cell, Pigment};
+use crate::game::core::cue::{Cell, Pigment};
 use bevy::prelude::*;
 
 pub const SIZE: f32 = 60.0;
@@ -54,5 +54,12 @@ impl From<&Pigment> for Color {
             Pigment::E => Color::rgb(0.12, 0.80, 1.0),
             Pigment::None => Color::rgb(0.0, 0.0, 0.0),
         }
+    }
+}
+
+/// Generic system that takes a component as a parameter, and will despawn all entities with that component
+pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &to_despawn {
+        commands.entity(entity).despawn_recursive();
     }
 }

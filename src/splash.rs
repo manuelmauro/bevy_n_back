@@ -1,4 +1,4 @@
-use super::{despawn_screen, GameState};
+use crate::{utils::despawn_screen, GameState};
 use bevy::prelude::*;
 
 pub struct SplashPlugin;

@@ -1,18 +1,19 @@
 // disable console on windows for release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::menu::MenuState;
-
-use super::{despawn_screen, GameState};
+use crate::{
+    game::core::cue::{Cell, Pigment},
+    game::core::NBack,
+    menu::MenuState,
+    utils::despawn_screen,
+    utils::SPACING,
+    GameState,
+};
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use bevy_kira_audio::prelude::*;
-use bevy_kira_audio::Audio;
-use bevy_n_back::{
-    core::cue::{Cell, Pigment},
-    core::NBack,
-    utils::SPACING,
-};
+use bevy_kira_audio::{prelude::*, Audio};
+
+pub mod core;
 
 #[derive(Component, Deref, DerefMut)]
 struct CellTimer(Timer);
