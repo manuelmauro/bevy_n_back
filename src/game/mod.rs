@@ -38,6 +38,7 @@ impl Plugin for GamePlugin {
                     answer_system,
                     cue_system.after(answer_system),
                     debug_ui,
+                    exit_game_system,
                 )
                     .run_if(in_state(GameState::Game)),
             )
@@ -162,9 +163,6 @@ fn answer_system(
     mut game: ResMut<NBack>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&CellTimer>,
-    mut menu_state: ResMut<NextState<MenuState>>,
-    mut game_state: ResMut<NextState<GameState>>,
-    audio: Res<Audio>,
 ) {
     if keyboard_input.pressed(KeyCode::W) {
         game.answer.w();
@@ -178,11 +176,6 @@ fn answer_system(
     if keyboard_input.pressed(KeyCode::D) {
         game.answer.d();
     }
-    if keyboard_input.pressed(KeyCode::Escape) {
-        game_state.set(GameState::Menu);
-        menu_state.set(MenuState::Main);
-        audio.stop();
-    }
 
     if let Ok(timer) = query.get_single_mut() {
         if timer.just_finished() {
@@ -190,6 +183,20 @@ fn answer_system(
             game.answer.reset();
             info!("reset answer");
         }
+    }
+}
+
+/// Exit game.
+fn exit_game_system(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut menu_state: ResMut<NextState<MenuState>>,
+    mut game_state: ResMut<NextState<GameState>>,
+    audio: Res<Audio>,
+) {
+    if keyboard_input.pressed(KeyCode::Escape) {
+        game_state.set(GameState::Menu);
+        menu_state.set(MenuState::Main);
+        audio.stop();
     }
 }
 
