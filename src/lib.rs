@@ -2,7 +2,6 @@ use bevy::prelude::*;
 
 pub mod game;
 pub mod menu;
-pub mod setting;
 pub mod splash;
 
 const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
